@@ -1,89 +1,73 @@
 #### Preamble ####
-# Purpose: Tests the structure and validity of the simulated Australian 
-  #electoral divisions dataset.
-# Author: Rohan Alexander
-# Date: 26 September 2024
-# Contact: rohan.alexander@utoronto.ca
+# Purpose: Tests the structure and validity of the simulated data
+# Author: Lexun Yu
+# Date: 17 November 2024
+# Contact: lx.yu@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: 
-  # - The `tidyverse` package must be installed and loaded
-  # - 00-simulate_data.R must have been run
-# Any other information needed? Make sure you are in the `starter_folder` rproj
-
 
 #### Workspace setup ####
-library(tidyverse)
+# Load required packages
+library(testthat)
+library(dplyr)
+library(arrow)
 
-analysis_data <- read_csv("data/00-simulated_data/simulated_data.csv")
+simulated_data <- read_parquet("data/00-simulated_data/simulated_data.parquet")
 
-# Test if the data was successfully loaded
-if (exists("analysis_data")) {
-  message("Test Passed: The dataset was successfully loaded.")
-} else {
-  stop("Test Failed: The dataset could not be loaded.")
-}
+# Define the tests
 
+test_that("No NA values in the dataset", {
+  # Check if any column contains NA values
+  expect_false(any(is.na(simulated_data)), info = "Dataset contains NA values")
+})
 
-#### Test data ####
+test_that("Simulated dataset has correct structure", {
+  # Test the number of rows
+  expect_equal(nrow(simulated_data), 132)
 
-# Check if the dataset has 151 rows
-if (nrow(analysis_data) == 151) {
-  message("Test Passed: The dataset has 151 rows.")
-} else {
-  stop("Test Failed: The dataset does not have 151 rows.")
-}
+  # Test the number of columns
+  expect_equal(ncol(simulated_data), 10)
 
-# Check if the dataset has 3 columns
-if (ncol(analysis_data) == 3) {
-  message("Test Passed: The dataset has 3 columns.")
-} else {
-  stop("Test Failed: The dataset does not have 3 columns.")
-}
+  # Test the column names
+  expected_colnames <- c(
+    "date", "wind_speed", "total_precipitation", "snow", "pressure_station",
+    "max_temp", "min_temp", "mean_temp", "total_rain", "total_snow"
+  )
+  expect_equal(colnames(simulated_data), expected_colnames)
+})
 
-# Check if all values in the 'division' column are unique
-if (n_distinct(analysis_data$division) == nrow(analysis_data)) {
-  message("Test Passed: All values in 'division' are unique.")
-} else {
-  stop("Test Failed: The 'division' column contains duplicate values.")
-}
+test_that("Date column is correctly formatted", {
+  # Test if the date column is of Date type
+  expect_s3_class(simulated_data$date, "Date")
 
-# Check if the 'state' column contains only valid Australian state names
-valid_states <- c("New South Wales", "Victoria", "Queensland", "South Australia", 
-                  "Western Australia", "Tasmania", "Northern Territory", 
-                  "Australian Capital Territory")
+  # Test if the dates are in the expected range
+  expect_true(all(simulated_data$date >= as.Date("1960-01-01") & simulated_data$date <= as.Date("1970-12-01")))
+})
 
-if (all(analysis_data$state %in% valid_states)) {
-  message("Test Passed: The 'state' column contains only valid Australian state names.")
-} else {
-  stop("Test Failed: The 'state' column contains invalid state names.")
-}
+test_that("Numeric columns have expected ranges", {
+  # Test wind speed range
+  expect_true(all(simulated_data$wind_speed >= 10 & simulated_data$wind_speed <= 30))
 
-# Check if the 'party' column contains only valid party names
-valid_parties <- c("Labor", "Liberal", "Greens", "National", "Other")
+  # Test total precipitation range
+  expect_true(all(simulated_data$total_precipitation >= 50 & simulated_data$total_precipitation <= 250))
 
-if (all(analysis_data$party %in% valid_parties)) {
-  message("Test Passed: The 'party' column contains only valid party names.")
-} else {
-  stop("Test Failed: The 'party' column contains invalid party names.")
-}
+  # Test snow range
+  expect_true(all(simulated_data$snow >= 0 & simulated_data$snow <= 200))
 
-# Check if there are any missing values in the dataset
-if (all(!is.na(analysis_data))) {
-  message("Test Passed: The dataset contains no missing values.")
-} else {
-  stop("Test Failed: The dataset contains missing values.")
-}
+  # Test pressure station range
+  expect_true(all(simulated_data$pressure_station >= 990 & simulated_data$pressure_station <= 1030))
 
-# Check if there are no empty strings in 'division', 'state', and 'party' columns
-if (all(analysis_data$division != "" & analysis_data$state != "" & analysis_data$party != "")) {
-  message("Test Passed: There are no empty strings in 'division', 'state', or 'party'.")
-} else {
-  stop("Test Failed: There are empty strings in one or more columns.")
-}
+  # Test max temperature range
+  expect_true(all(simulated_data$max_temp >= -10 & simulated_data$max_temp <= 35))
 
-# Check if the 'party' column has at least two unique values
-if (n_distinct(analysis_data$party) >= 2) {
-  message("Test Passed: The 'party' column contains at least two unique values.")
-} else {
-  stop("Test Failed: The 'party' column contains less than two unique values.")
-}
+  # Test min temperature range
+  expect_true(all(simulated_data$min_temp >= -20 & simulated_data$min_temp <= 20))
+
+  # Test mean temperature range
+  expect_true(all(simulated_data$mean_temp >= -15 & simulated_data$mean_temp <= 25))
+
+  # Test total rain range
+  expect_true(all(simulated_data$total_rain >= 0 & simulated_data$total_rain <= 200))
+
+  # Test total snow range
+  expect_true(all(simulated_data$total_snow >= 0 & simulated_data$total_snow <= 150))
+})

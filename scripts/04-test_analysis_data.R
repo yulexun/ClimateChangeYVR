@@ -1,69 +1,69 @@
 #### Preamble ####
-# Purpose: Tests... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 26 September 2024 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Purpose: Tests the structure and validity of the cleaned data
+# Author: Lexun Yu
+# Date: 17 November 2024
+# Contact: lx.yu@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
-
 
 #### Workspace setup ####
 library(tidyverse)
 library(testthat)
+library(arrow)
 
-data <- read_csv("data/02-analysis_data/analysis_data.csv")
-
+data <- read_parquet("data/02-analysis_data/cleaned_data.parquet")
 
 #### Test data ####
-# Test that the dataset has 151 rows - there are 151 divisions in Australia
-test_that("dataset has 151 rows", {
-  expect_equal(nrow(analysis_data), 151)
+
+test_that("No NA values in the dataset", {
+  # Check if any column contains NA values
+  expect_false(any(is.na(cleaned_data)), info = "Dataset contains NA values")
 })
 
-# Test that the dataset has 3 columns
-test_that("dataset has 3 columns", {
-  expect_equal(ncol(analysis_data), 3)
+test_that("Simulated dataset has correct structure", {
+  # Test the number of rows
+  expect_equal(nrow(cleaned_data), 612)
+
+  # Test the number of columns
+  expect_equal(ncol(cleaned_data), 9)
+
+  # Test the column names
+  expected_colnames <- c(
+    "date", "wind_speed", "total_precipitation", "snow", "pressure_station",
+    "max_temp", "min_temp", "mean_temp", "total_rain"
+  )
+  expect_equal(colnames(cleaned_data), expected_colnames)
 })
 
-# Test that the 'division' column is character type
-test_that("'division' is character", {
-  expect_type(analysis_data$division, "character")
+test_that("Date column is correctly formatted", {
+  # Test if the date column is of Date type
+  expect_s3_class(cleaned_data$date, "Date")
+
+  # Test if the dates are in the expected range
+  expect_true(all(cleaned_data$date >= as.Date("1960-01-01") & cleaned_data$date <= as.Date("2010-12-01")))
 })
 
-# Test that the 'party' column is character type
-test_that("'party' is character", {
-  expect_type(analysis_data$party, "character")
-})
+test_that("Numeric columns have expected ranges", {
+  # Test wind speed range
+  expect_true(all(cleaned_data$wind_speed >= 0 & cleaned_data$wind_speed <= 30))
 
-# Test that the 'state' column is character type
-test_that("'state' is character", {
-  expect_type(analysis_data$state, "character")
-})
+  # Test total precipitation range
+  expect_true(all(cleaned_data$total_precipitation >= 10 & cleaned_data$total_precipitation <= 250))
 
-# Test that there are no missing values in the dataset
-test_that("no missing values in dataset", {
-  expect_true(all(!is.na(analysis_data)))
-})
+  # Test snow range
+  expect_true(all(cleaned_data$snow >= 0 & cleaned_data$snow <= 200))
 
-# Test that 'division' contains unique values (no duplicates)
-test_that("'division' column contains unique values", {
-  expect_equal(length(unique(analysis_data$division)), 151)
-})
+  # Test pressure station range
+  expect_true(all(cleaned_data$pressure_station >= 990 & cleaned_data$pressure_station <= 1030))
 
-# Test that 'state' contains only valid Australian state or territory names
-valid_states <- c("New South Wales", "Victoria", "Queensland", "South Australia", "Western Australia", 
-                  "Tasmania", "Northern Territory", "Australian Capital Territory")
-test_that("'state' contains valid Australian state names", {
-  expect_true(all(analysis_data$state %in% valid_states))
-})
+  # Test max temperature range
+  expect_true(all(cleaned_data$max_temp >= -20 & cleaned_data$max_temp <= 35))
 
-# Test that there are no empty strings in 'division', 'party', or 'state' columns
-test_that("no empty strings in 'division', 'party', or 'state' columns", {
-  expect_false(any(analysis_data$division == "" | analysis_data$party == "" | analysis_data$state == ""))
-})
+  # Test min temperature range
+  expect_true(all(cleaned_data$min_temp >= -30 & cleaned_data$min_temp <= 20))
 
-# Test that the 'party' column contains at least 2 unique values
-test_that("'party' column contains at least 2 unique values", {
-  expect_true(length(unique(analysis_data$party)) >= 2)
+  # Test mean temperature range
+  expect_true(all(cleaned_data$mean_temp >= -20 & cleaned_data$mean_temp <= 25))
+
+  # Test total rain range
+  expect_true(all(cleaned_data$total_rain >= 0 & cleaned_data$total_rain <= 300))
 })

@@ -1,52 +1,27 @@
 #### Preamble ####
-# Purpose: Simulates a dataset of Australian electoral divisions, including the 
-  #state and party that won each division.
-# Author: Rohan Alexander
-# Date: 26 September 2024
-# Contact: rohan.alexander@utoronto.ca
+# Purpose: Simulates a dataset of YUL weather data
+# Author: Lexun Yu
+# Date: 17 November 2024
+# Contact: lx.yu@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: The `tidyverse` package must be installed
-# Any other information needed? Make sure you are in the `starter_folder` rproj
-
 
 #### Workspace setup ####
 library(tidyverse)
+library(arrow)
 set.seed(853)
 
-
-#### Simulate data ####
-# State names
-states <- c(
-  "New South Wales",
-  "Victoria",
-  "Queensland",
-  "South Australia",
-  "Western Australia",
-  "Tasmania",
-  "Northern Territory",
-  "Australian Capital Territory"
+# Generate simulated data based on the cleaned_data structure
+simulated_data <- tibble(
+  date = seq(as.Date("1960-01-01"), as.Date("1970-12-01"), by = "month"), # Simulated dates
+  wind_speed = runif(n = 132, min = 10, max = 30), # Random wind speed between 10 and 30
+  total_precipitation = runif(n = 132, min = 50, max = 250), # Random precipitation between 50 and 250 mm
+  snow = runif(n = 132, min = 0, max = 200), # Random snow between 0 and 200 cm
+  pressure_station = runif(n = 132, min = 990, max = 1030), # Random pressure between 990 and 1030 hPa
+  max_temp = runif(n = 132, min = -10, max = 35), # Random max temperature between -10°C and 35°C
+  min_temp = runif(n = 132, min = -20, max = 20), # Random min temperature between -20°C and 20°C
+  mean_temp = runif(n = 132, min = -15, max = 25), # Random mean temperature between -15°C and 25°C
+  total_rain = runif(n = 132, min = 0, max = 200), # Random total rain between 0 and 200 mm
+  total_snow = runif(n = 132, min = 0, max = 150) # Random total snow between 0 and 150 cm
 )
 
-# Political parties
-parties <- c("Labor", "Liberal", "Greens", "National", "Other")
-
-# Create a dataset by randomly assigning states and parties to divisions
-analysis_data <- tibble(
-  division = paste("Division", 1:151),  # Add "Division" to make it a character
-  state = sample(
-    states,
-    size = 151,
-    replace = TRUE,
-    prob = c(0.25, 0.25, 0.15, 0.1, 0.1, 0.1, 0.025, 0.025) # Rough state population distribution
-  ),
-  party = sample(
-    parties,
-    size = 151,
-    replace = TRUE,
-    prob = c(0.40, 0.40, 0.05, 0.1, 0.05) # Rough party distribution
-  )
-)
-
-
-#### Save data ####
-write_csv(analysis_data, "data/00-simulated_data/simulated_data.csv")
+write_parquet(simulated_data, "data/00-simulated_data/simulated_data.parquet")
