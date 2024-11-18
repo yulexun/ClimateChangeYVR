@@ -14,6 +14,8 @@ library(rstanarm)
 library(brms)
 library(car)
 library(modelsummary)
+library(boot)
+
 
 #### Read data ####
 analysis_data <- read_parquet("data/02-analysis_data/cleaned_data.parquet")
@@ -37,30 +39,40 @@ summary(m3)
 AIC(m3)
 
 # Bayesian Model
-formula <- bf(mean_temp ~ wind_speed + pressure_station + total_rain + gust_speed_km_h)
+bayesian_model <- brm(mean_temp ~ wind_speed + total_precipitation + pressure_station +
+  total_rain + gust_speed_km_h,
+  data = analysis_data,
+  family = gaussian(),
+  prior = c(prior(normal(0, 10), class = "b"),
+            prior(normal(0, 10), class = "Intercept")),
+  chains = 4, iter = 2000, cores = 4)
 
-priors <- c(
-  prior(normal(0, 5), class = "b"),
-  prior(normal(0, 10), class = "Intercept")
+# Summary of results
+summary(bayesian_model)
+
+# Posterior predictive checks
+pp_check(bayesian_model)
+
+analysis_data$log_mean_temp <- log(analysis_data$mean_temp + 3)
+
+
+bayesian_model_log <- brm(
+  formula = log_mean_temp ~ wind_speed + total_precipitation + pressure_station + 
+             total_rain + gust_speed_km_h,
+  data = analysis_data,
+  family = gaussian(),
+  prior = c(
+    prior(normal(0, 10), class = "b"),       # Priors for coefficients
+    prior(normal(0, 10), class = "Intercept") # Prior for the intercept
+  ),
+  chains = 4, iter = 2000, cores = 4
 )
 
-model <- brm(
-    formula = formula,
-    data = analysis_data,
-    family = gaussian(),
-    prior = priors,
-    chains = 4, 
-    iter = 2000, 
-    warmup = 500, 
-    cores = 4
-)
+# Summary of the model
+summary(bayesian_model_log)
 
-summary(model)
-
-pp_check(model)
-bayes_R2(model)
-summary(m1)$r.squared
-summary(m1)$adj.r.squared
+# Posterior predictive checks
+pp_check(bayesian_model_log)
 
 # GLM
 glm_model <- glm(mean_temp ~ wind_speed + total_precipitation + pressure_station + 
@@ -78,6 +90,14 @@ glm_model_log <- glm(log(mean_temp) ~ wind_speed + total_precipitation + pressur
 
 summary(glm_model_log)
 modelsummary(glm_model_log)
+
+# Model Comparison
+cv_glm <- cv.glm(data = analysis_data, glmfit = glm_model_log, K = 10)
+
+# RMSE for GLM
+rmse_glm <- sqrt(cv_glm$delta[1])  # Extract cross-validation error
+print(rmse_glm)
+
 
 #### Save model ####
 saveRDS(
