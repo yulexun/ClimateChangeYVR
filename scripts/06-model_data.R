@@ -73,6 +73,7 @@ bayesian_model_log <- brm(
 
 # Summary of the model
 summary(bayesian_model_log)
+modelsummary(bayesian_model_log)
 
 # Posterior predictive checks
 pp_check(bayesian_model_log)

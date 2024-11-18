@@ -3,7 +3,7 @@ title: "My title"
 subtitle: "My subtitle if needed"
 author: 
   - Lexun Yu
-thanks: "Code and data are available at: [https://github.com/RohanAlexander/starter_folder](https://github.com/RohanAlexander/starter_folder)."
+thanks: "Code and data are available at: [https://github.com/yulexun/ClimateChangeYVR](https://github.com/yulexun/ClimateChangeYVR)."
 date: today
 date-format: long
 abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
@@ -28,7 +28,11 @@ analysis_data <- read_parquet(here("data/02-analysis_data/cleaned_data.parquet")
 
 # Introduction
 
-Overview paragraph
+Climate change is a global challenges today. Patterns such as rising temperatures, shifting weather systems, and increased frequency of severe weather events. In 2021, floods swept through streets in Japanese cities, displacing millions, while extreme heat fueled wildfires in Siberia [@greenpeace_east_asia_5_2021]. Climate change impacts human health, ecosystems, food security, water supplies, and economic stability. Understanding the factors driving temperature changes is necessary for designing effective mitigation strategies. This requires examining the various contributors to temperature variations.
+
+Some scholars have examined the changing climate. @xu_melting_2009 analyze the effects of rising temperatures in the Himalayas, highlighting increased frequency and duration of extreme events and shifts in ecosystems. These changes pose challenges to water supply, agriculture, and human populations. @visser_eliminating_2021 investigates the relationship between precipitation and temperature using data from the Australian Bureau of Meteorology. Visser's regression model indicates that average precipitation intensities increase with temperature, suggesting more intense rainfall in a warmer climate. The role of sea level pressure is also significant. @wills_systematic_2022 note that observed trends in sea level pressure have intensified warming in the Indo-Pacific Warm Pool and caused slight cooling in the eastern equatorial Pacific. However, as @zhang_economic_2017 argue, much of the research has focused on temperature and precipitation. @zhang_economic_2017 expands on this by incorporating additional predictors—relative humidity and wind speed—and concludes, using data from the Ministry of Agriculture of China, that these variables are important in understanding climate dynamics.
+
+With the data obtained from @canadian_centre_for_climate_services_adjusted_2022 and @meteorological_service_of_canada_past_2023, this research paper aims to identify the factors influencing temperature at Vancouver International Airport. Located on the west coast of Richmond, the airport sits on Sea Island, surrounded by water. As a transportation hub for passengers and freight, assessing the location's safety in a warming climate is important.
 
 Estimand paragraph
 
@@ -63,40 +67,9 @@ Add graphs, tables and text. Use sub-sub-headings for each outcome variable or u
 
 Some of our data is of penguins (@fig-bills), from @palmerpenguins.
 
-```{r}
-#| label: fig-bills
-#| fig-cap: Bills of penguins
-#| echo: false
-
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = "none") +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
-```
-
 Talk more about it.
 
 And also planes (@fig-planes). (You can change the height and width, but don't worry about doing that until you have finished every other aspect of the paper - Quarto will try to make it look nice and the defaults usually work well once you have enough text.)
-
-```{r}
-#| label: fig-planes
-#| fig-cap: Relationship between wing length and width
-#| echo: false
-#| warning: false
-#| message: false
-
-analysis_data <- read_csv(here::here("data/02-analysis_data/analysis_data.csv"))
-
-analysis_data |> 
-  ggplot(aes(x = width, y = length)) +
-  geom_point(alpha = 0.8) +
-  theme_minimal() +
-  labs(x = "Wing width (mm)",
-       y = "Wing length (mm)")
-```
 
 Talk way more about it. 
 
@@ -146,35 +119,6 @@ We can use maths by including latex between dollar signs, for instance $\theta$.
 
 Our results are summarized in @tbl-modelresults.
 
-```{r}
-#| echo: false
-#| eval: true
-#| warning: false
-#| message: false
-
-library(rstanarm)
-
-first_model <-
-  readRDS(file = here::here("models/first_model.rds"))
-```
-
-```{r}
-#| echo: false
-#| eval: true
-#| label: tbl-modelresults
-#| tbl-cap: "Explanatory models of flight time based on wing width and wing length"
-#| warning: false
-
-modelsummary::modelsummary(
-  list(
-    "First model" = first_model
-  ),
-  statistic = "mad",
-  fmt = 2
-)
-```
-
-
 
 
 # Discussion
@@ -210,47 +154,6 @@ In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. 
 
 In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
 
-```{r}
-#| eval: true
-#| echo: false
-#| message: false
-#| warning: false
-#| label: fig-ppcheckandposteriorvsprior
-#| layout-ncol: 2
-#| fig-cap: "Examining how the model fits, and is affected by, the data"
-#| fig-subcap: ["Posterior prediction check", "Comparing the posterior with the prior"]
-
-pp_check(first_model) +
-  theme_classic() +
-  theme(legend.position = "bottom")
-
-posterior_vs_prior(first_model) +
-  theme_minimal() +
-  scale_color_brewer(palette = "Set1") +
-  theme(legend.position = "bottom") +
-  coord_flip()
-```
-
-## Diagnostics
-
-@fig-stanareyouokay-1 is a trace plot. It shows... This suggests...
-
-@fig-stanareyouokay-2 is a Rhat plot. It shows... This suggests...
-
-```{r}
-#| echo: false
-#| eval: true
-#| message: false
-#| warning: false
-#| label: fig-stanareyouokay
-#| fig-cap: "Checking the convergence of the MCMC algorithm"
-#| fig-subcap: ["Trace plot", "Rhat plot"]
-#| layout-ncol: 2
-
-plot(first_model, "trace")
-
-plot(first_model, "rhat")
-```
 
 
 

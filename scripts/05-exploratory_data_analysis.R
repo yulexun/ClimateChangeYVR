@@ -55,4 +55,3 @@ pairs(as.data.frame(selected_data), main = "Pairwise Scatterplots (Excluding Sno
 
 selected_data <- analysis_data[, c("wind_speed", "pressure_station", "mean_temp", "total_rain", "gust_speed_km_h")]
 pairs(as.data.frame(selected_data), main = "Pairwise Scatterplots (Excluding Snow, Max Temp, and Min Temp)")
-
