@@ -12,11 +12,31 @@
 library(tidyverse)
 library(rstanarm)
 library(brms)
+library(car)
+library(modelsummary)
 
 #### Read data ####
 analysis_data <- read_parquet("data/02-analysis_data/cleaned_data.parquet")
 
 ### Model data ####
+
+# MLR
+
+
+m1 <- lm(mean_temp ~ wind_speed + total_precipitation + snow + 
+  pressure_station + max_temp + min_temp + total_rain + gust_speed_km_h, data=analysis_data)
+summary(m1)
+
+m2 <- lm(mean_temp ~ wind_speed + total_precipitation + snow + 
+  pressure_station + total_rain + gust_speed_km_h, data=analysis_data)
+summary(m2)
+
+m3 <- lm(mean_temp ~ wind_speed + total_precipitation +
+  pressure_station + total_rain + gust_speed_km_h, data=analysis_data)
+summary(m3)
+AIC(m3)
+
+# Bayesian Model
 formula <- bf(mean_temp ~ wind_speed + pressure_station + total_rain + gust_speed_km_h)
 
 priors <- c(
@@ -38,6 +58,26 @@ model <- brm(
 summary(model)
 
 pp_check(model)
+bayes_R2(model)
+summary(m1)$r.squared
+summary(m1)$adj.r.squared
+
+# GLM
+glm_model <- glm(mean_temp ~ wind_speed + total_precipitation + pressure_station + 
+  total_rain + gust_speed_km_h,
+  data = analysis_data,
+  family = gaussian())
+
+summary(glm_model)
+modelsummary(glm_model)
+
+glm_model_log <- glm(log(mean_temp) ~ wind_speed + total_precipitation + pressure_station +
+                 total_rain + gust_speed_km_h,
+                 data = analysis_data,
+                 family = gaussian())
+
+summary(glm_model_log)
+modelsummary(glm_model_log)
 
 #### Save model ####
 saveRDS(

@@ -51,6 +51,9 @@ hist(log(gust_speed_km_h), breaks=100, main="Log(Max Gust Speed)")
 
 pairs(analysis_data[, 2:8], main = "Pairwise Scatterplots (Columns 1-8)")
 
+selected_data <- analysis_data[, c("wind_speed", "pressure_station", "snow", "mean_temp", "total_rain", "gust_speed_km_h")]
+pairs(as.data.frame(selected_data), main = "Pairwise Scatterplots (Excluding Snow, Max Temp, and Min Temp)")
+
 selected_data <- analysis_data[, c("wind_speed", "pressure_station", "mean_temp", "total_rain", "gust_speed_km_h")]
 pairs(as.data.frame(selected_data), main = "Pairwise Scatterplots (Excluding Snow, Max Temp, and Min Temp)")
 
