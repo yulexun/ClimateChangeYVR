@@ -21,15 +21,15 @@ test_that("No NA values in the dataset", {
 
 test_that("Simulated dataset has correct structure", {
   # Test the number of rows
-  expect_equal(nrow(cleaned_data), 612)
+  expect_equal(nrow(cleaned_data), 610)
 
   # Test the number of columns
-  expect_equal(ncol(cleaned_data), 9)
+  expect_equal(ncol(cleaned_data), 10)
 
   # Test the column names
   expected_colnames <- c(
     "date", "wind_speed", "total_precipitation", "snow", "pressure_station",
-    "max_temp", "min_temp", "mean_temp", "total_rain"
+    "max_temp", "min_temp", "mean_temp", "total_rain", "gust_speed_km_h"
   )
   expect_equal(colnames(cleaned_data), expected_colnames)
 })
@@ -39,7 +39,7 @@ test_that("Date column is correctly formatted", {
   expect_s3_class(cleaned_data$date, "Date")
 
   # Test if the dates are in the expected range
-  expect_true(all(cleaned_data$date >= as.Date("1960-01-01") & cleaned_data$date <= as.Date("2010-12-01")))
+  expect_true(all(cleaned_data$date >= as.Date("1959-08-01") & cleaned_data$date <= as.Date("2010-08-01")))
 })
 
 test_that("Numeric columns have expected ranges", {
@@ -47,7 +47,7 @@ test_that("Numeric columns have expected ranges", {
   expect_true(all(cleaned_data$wind_speed >= 0 & cleaned_data$wind_speed <= 30))
 
   # Test total precipitation range
-  expect_true(all(cleaned_data$total_precipitation >= 10 & cleaned_data$total_precipitation <= 250))
+  expect_true(all(cleaned_data$total_precipitation >= 0 & cleaned_data$total_precipitation <= 400))
 
   # Test snow range
   expect_true(all(cleaned_data$snow >= 0 & cleaned_data$snow <= 200))
@@ -65,5 +65,8 @@ test_that("Numeric columns have expected ranges", {
   expect_true(all(cleaned_data$mean_temp >= -20 & cleaned_data$mean_temp <= 25))
 
   # Test total rain range
-  expect_true(all(cleaned_data$total_rain >= 0 & cleaned_data$total_rain <= 300))
+  expect_true(all(cleaned_data$total_rain >= 0 & cleaned_data$total_rain <= 400))
+
+  # Test max gust speed
+  expect_true(all(cleaned_data$gust_speed_km_h >= 0 & cleaned_data$gust_speed_km_h <= 300))
 })

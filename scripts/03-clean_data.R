@@ -12,8 +12,8 @@ library(lubridate)
 library(arrow)
 
 #### Clean data ####
-raw_data_climate <- read_csv("data/01-raw_data/climateyul.csv")
-raw_data_ahccd <- read_csv("data/01-raw_data/ahccdyul.csv")
+raw_data_climate <- read_csv("data/01-raw_data/climateyvr.csv")
+raw_data_ahccd <- read_csv("data/01-raw_data/ahccdyvr.csv")
 
 raw_data_climate <-
   raw_data_climate |>
@@ -31,13 +31,13 @@ raw_data_climate$date_time <- ymd(paste0(raw_data_climate$date_time, "-01"))
 # keep data from 1960 to 2010
 
 data_ahccd <- raw_data_ahccd[
-  raw_data_ahccd$date_time >= as.Date("1960-01-01") &
-    raw_data_ahccd$date_time <= as.Date("2010-12-31"),
+  raw_data_ahccd$date_time >= as.Date("1959-08-01") &
+    raw_data_ahccd$date_time <= as.Date("2010-08-01"),
 ]
 
 data_climate <- raw_data_climate[
-  raw_data_climate$date_time >= as.Date("1960-01-01") &
-    raw_data_climate$date_time <= as.Date("2010-12-31"),
+  raw_data_climate$date_time >= as.Date("1959-08-01") &
+    raw_data_climate$date_time <= as.Date("2010-08-01"),
 ]
 
 # only keep variables related to this research
@@ -54,7 +54,7 @@ cleaned_data_ahccd <- data_ahccd %>%
 # For the second dataset (data_climate)
 variables_to_keep_climate <- c(
   "date_time", "mean_max_temp_c", "mean_min_temp_c",
-  "mean_temp_c", "total_rain_mm"
+  "mean_temp_c", "total_rain_mm", "spd_of_max_gust_km_h"
 )
 
 cleaned_data_climate <- data_climate %>%
@@ -72,7 +72,11 @@ cleaned_data <- cleaned_data %>%
     max_temp = mean_max_temp_c,
     min_temp = mean_min_temp_c,
     mean_temp = mean_temp_c,
-    total_rain = total_rain_mm
+    total_rain = total_rain_mm,
+    gust_speed_km_h = spd_of_max_gust_km_h
   )
+
+cleaned_data <-
+  na.omit(cleaned_data)
 
 write_parquet(cleaned_data, "data/02-analysis_data/cleaned_data.parquet")
