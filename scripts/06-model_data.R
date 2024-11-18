@@ -1,11 +1,9 @@
 #### Preamble ####
-# Purpose: Models... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 11 February 2023 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Purpose: Building GLM model and BRM model
+# Author: Lexun Yu
+# Date: 18 November 2024
+# Contact: lx.yu@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
 
 
 #### Workspace setup ####
@@ -57,8 +55,10 @@ summary(bayesian_model)
 # Posterior predictive checks
 pp_check(bayesian_model)
 
-analysis_data$log_mean_temp <- log(analysis_data$mean_temp + 3)
+analysis_data$mean_temp_F <- (analysis_data$mean_temp * 1.8) + 32
+analysis_data$log_mean_temp <- log(analysis_data$mean_temp_F)
 
+hist(analysis_data$log_mean_temp)
 
 bayesian_model_log <- brm(
   formula = log_mean_temp ~ wind_speed + total_precipitation + pressure_station +
@@ -77,6 +77,7 @@ summary(bayesian_model_log)
 
 # Posterior predictive checks
 pp_check(bayesian_model_log)
+plot(residuals(bayesian_model_log))
 
 # GLM
 glm_model <- glm(
@@ -90,7 +91,7 @@ summary(glm_model)
 modelsummary(glm_model)
 
 glm_model_log <- glm(
-  log(mean_temp) ~ wind_speed + total_precipitation + pressure_station +
+  log_mean_temp ~ wind_speed + total_precipitation + pressure_station +
     total_rain + gust_speed_km_h,
   data = analysis_data,
   family = gaussian()
@@ -99,16 +100,45 @@ glm_model_log <- glm(
 summary(glm_model_log)
 modelsummary(glm_model_log)
 
-# Model Comparison
-cv_glm <- cv.glm(data = analysis_data, glmfit = glm_model_log, K = 10)
 
-# RMSE for GLM
-rmse_glm <- sqrt(cv_glm$delta[1]) # Extract cross-validation error
-print(rmse_glm)
+#### Validation Testing ####
+set.seed(123)
+train_indices <- sample(1:nrow(analysis_data), size = 0.7 * nrow(analysis_data))
+train_data <- analysis_data[train_indices, ]
+test_data <- analysis_data[-train_indices, ]
+
+# GLM
+glm_model <- glm_model_log
+
+# BRM
+brm_model <- bayesian_model_log
+
+# GLM predictions
+glm_predictions <- predict(glm_model, newdata = test_data)
+
+# BRM predictions
+brm_predictions <- colMeans(posterior_predict(brm_model, newdata = test_data))
+
+# RMSE
+rmse_glm <- sqrt(mean((test_data$mean_temp - glm_predictions)^2))
+rmse_brm <- sqrt(mean((test_data$mean_temp - brm_predictions)^2))
+
+# MAE
+mae_glm <- mean(abs(test_data$mean_temp - glm_predictions))
+mae_brm <- mean(abs(test_data$mean_temp - brm_predictions))
+
+# Compare results
+print(c(GLM_RMSE = rmse_glm, BRM_RMSE = rmse_brm))
+print(c(GLM_MAE = mae_glm, BRM_MAE = mae_brm))
 
 
 #### Save model ####
 saveRDS(
-  model,
-  file = "models/first_model_bayesian.rds"
+  brm_model,
+  file = "models/brm_model.rds"
+)
+
+saveRDS(
+  glm_model,
+  file = "models/glm_model.rds"
 )

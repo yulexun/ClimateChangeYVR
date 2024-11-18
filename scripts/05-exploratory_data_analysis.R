@@ -1,11 +1,9 @@
 #### Preamble ####
-# Purpose: Models... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 11 February 2023 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Purpose: Graph and check the cleaned raw data
+# Author: Lexun Yu
+# Date: 18 November 2024
+# Contact: lx.yu@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
 
 
 #### Workspace setup ####
@@ -57,5 +55,3 @@ pairs(as.data.frame(selected_data), main = "Pairwise Scatterplots (Excluding Sno
 selected_data <- analysis_data[, c("wind_speed", "pressure_station", "mean_temp", "total_rain", "gust_speed_km_h")]
 pairs(as.data.frame(selected_data), main = "Pairwise Scatterplots (Excluding Snow, Max Temp, and Min Temp)")
 
-
-#### Save model ####
