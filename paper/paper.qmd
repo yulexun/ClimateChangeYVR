@@ -32,13 +32,12 @@ Climate change is a global challenges today. Patterns such as rising temperature
 
 Some scholars have examined the changing climate. @xu_melting_2009 analyze the effects of rising temperatures in the Himalayas, highlighting increased frequency and duration of extreme events and shifts in ecosystems. These changes pose challenges to water supply, agriculture, and human populations. @visser_eliminating_2021 investigates the relationship between precipitation and temperature using data from the Australian Bureau of Meteorology. Visser's regression model indicates that average precipitation intensities increase with temperature, suggesting more intense rainfall in a warmer climate. The role of sea level pressure is also significant. @wills_systematic_2022 note that observed trends in sea level pressure have intensified warming in the Indo-Pacific Warm Pool and caused slight cooling in the eastern equatorial Pacific. However, as @zhang_economic_2017 argue, much of the research has focused on temperature and precipitation. @zhang_economic_2017 expands on this by incorporating additional predictors—relative humidity and wind speed—and concludes, using data from the Ministry of Agriculture of China, that these variables are important in understanding climate dynamics.
 
-With the data obtained from @canadian_centre_for_climate_services_adjusted_2022 and @meteorological_service_of_canada_past_2023, this research paper aims to identify the factors influencing temperature at Vancouver International Airport. Located on the west coast of Richmond, the airport sits on Sea Island, surrounded by water. As a transportation hub for passengers and freight, assessing the location's safety in a warming climate is important.
+With the data obtained from @canadian_centre_for_climate_services_adjusted_2022 and @meteorological_service_of_canada_past_2023, this research paper aims to identify the factors influencing temperature at Vancouver International Airport. Located on the west coast of Richmond, the airport sits on Sea Island, surrounded by water. As a transportation hub for passengers and freight, it is important to assess the location's safety in a warming climate.
+
 
 Estimand paragraph
 
 Results paragraph
-
-Why it matters paragraph
 
 Telegraphing paragraph: The remainder of this paper is structured as follows. @sec-data....
 
