@@ -14,6 +14,8 @@ library(car)
 library(modelsummary)
 library(boot)
 library(arrow)
+library(MASS)
+
 
 #### Read data ####
 analysis_data <- read_parquet("data/02-analysis_data/cleaned_data.parquet")
@@ -54,9 +56,6 @@ summary(bayesian_model)
 
 # Posterior predictive checks
 pp_check(bayesian_model)
-
-analysis_data$mean_temp_F <- (analysis_data$mean_temp * 1.8) + 32
-analysis_data$log_mean_temp <- log(analysis_data$mean_temp_F)
 
 hist(analysis_data$log_mean_temp)
 
@@ -131,6 +130,7 @@ mae_brm <- mean(abs(test_data$mean_temp - brm_predictions))
 print(c(GLM_RMSE = rmse_glm, BRM_RMSE = rmse_brm))
 print(c(GLM_MAE = mae_glm, BRM_MAE = mae_brm))
 
+plot(glm_model)
 
 #### Save model ####
 saveRDS(

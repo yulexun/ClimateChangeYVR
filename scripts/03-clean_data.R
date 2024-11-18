@@ -79,4 +79,7 @@ cleaned_data <- cleaned_data %>%
 cleaned_data <-
   na.omit(cleaned_data)
 
+cleaned_data$mean_temp_F <- (cleaned_data$mean_temp * 1.8) + 32
+cleaned_data$log_mean_temp <- log(cleaned_data$mean_temp_F)
+
 write_parquet(cleaned_data, "data/02-analysis_data/cleaned_data.parquet")
