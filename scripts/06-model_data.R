@@ -24,7 +24,6 @@ analysis_data <- read_parquet("data/02-analysis_data/cleaned_data.parquet")
 
 # MLR
 
-
 m1 <- lm(mean_temp ~ wind_speed + total_precipitation + snow +
   pressure_station + max_temp + min_temp + total_rain + gust_speed_km_h, data = analysis_data)
 summary(m1)
@@ -142,4 +141,18 @@ saveRDS(
 saveRDS(
   glm_model,
   file = "models/glm_model.rds"
+)
+
+saveRDS(
+  m1,
+  file = "models/mlr_1.rds"
+)
+
+saveRDS(
+  m2,
+  file = "models/mlr_2.rds"
+)
+saveRDS(
+  glm_model,
+  file = "models/glm_nolog.rds"
 )
