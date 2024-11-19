@@ -24,38 +24,25 @@ analysis_data <- read_parquet("data/02-analysis_data/cleaned_data.parquet")
 
 # MLR
 
-m1 <- lm(mean_temp ~ wind_speed + total_precipitation + snow +
+m1 <- lm(mean_temp_F ~ wind_speed + total_precipitation + snow +
   pressure_station + max_temp + min_temp + total_rain + gust_speed_km_h, data = analysis_data)
 summary(m1)
 
-m2 <- lm(mean_temp ~ wind_speed + total_precipitation + snow +
+m2 <- lm(mean_temp_F ~ wind_speed + total_precipitation + snow +
   pressure_station + total_rain + gust_speed_km_h, data = analysis_data)
 summary(m2)
 
-m3 <- lm(mean_temp ~ wind_speed + total_precipitation +
+m3 <- lm(mean_temp_F ~ wind_speed + total_precipitation +
   pressure_station + total_rain + gust_speed_km_h, data = analysis_data)
 summary(m3)
+
+m4 <- lm(mean_temp_F ~ wind_speed +
+  pressure_station + total_rain + gust_speed_km_h, data = analysis_data)
+summary(m4)
+
 AIC(m3)
-
+AIC(m4)
 # Bayesian Model
-bayesian_model <- brm(
-  mean_temp ~ wind_speed + total_precipitation + pressure_station +
-    total_rain + gust_speed_km_h,
-  data = analysis_data,
-  family = gaussian(),
-  prior = c(
-    prior(normal(0, 10), class = "b"),
-    prior(normal(0, 10), class = "Intercept")
-  ),
-  chains = 4, iter = 2000, cores = 4
-)
-
-# Summary of results
-summary(bayesian_model)
-
-# Posterior predictive checks
-pp_check(bayesian_model)
-
 hist(analysis_data$log_mean_temp)
 
 bayesian_model_log <- brm(
@@ -80,7 +67,7 @@ plot(residuals(bayesian_model_log))
 
 # GLM
 glm_model <- glm(
-  mean_temp ~ wind_speed + total_precipitation + pressure_station +
+  mean_temp_F ~ wind_speed + total_precipitation + pressure_station +
     total_rain + gust_speed_km_h,
   data = analysis_data,
   family = gaussian()
@@ -152,6 +139,7 @@ saveRDS(
   m2,
   file = "models/mlr_2.rds"
 )
+saveRDS(m4, file = "models/mlr_4.rds")
 saveRDS(
   glm_model,
   file = "models/glm_nolog.rds"

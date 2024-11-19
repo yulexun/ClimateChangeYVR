@@ -20,9 +20,14 @@ bibliography: references.bib
 library(tidyverse)
 library(here)
 library(arrow)
+library(corrplot)
 
 analysis_data <- read_parquet(here("data/02-analysis_data/cleaned_data.parquet"))
-
+m1 <- readRDS(here("models/mlr_1.rds"))
+m2 <- readRDS(here("models/mlr_2.rds"))
+glm_nolog <- readRDS(here("models/glm_nolog.rds"))
+glm <- readRDS(here("models/glm_model.rds"))
+brm <- readRDS(here("models/brm_model.rds"))
 ```
 
 
@@ -47,6 +52,25 @@ Telegraphing paragraph: The remainder of this paper is structured as follows. @s
 
 
 # Data {#sec-data}
+```{r}
+
+selected_data_1 <- analysis_data[, c("wind_speed", "pressure_station", "snow", "log_mean_temp", "total_rain", "gust_speed_km_h")]
+pairs(as.data.frame(selected_data_1), main = "Pairwise Scatterplots (Excluding Max Temp, and Min Temp)")
+cor_matrix <- cor(selected_data_1)
+print(cor_matrix)
+corrplot(cor_matrix, method = "color", type = "upper", 
+         tl.col = "black", tl.srt = 45, 
+         col = colorRampPalette(c("blue", "white", "red"))(200))
+
+selected_data_3 <- analysis_data[, c("wind_speed", "pressure_station", "log_mean_temp", "total_rain", "gust_speed_km_h")]
+pairs(as.data.frame(selected_data_3), main = "Pairwise Scatterplots of log transformed temperature (Excluding Snow, Max Temp, and Min Temp)")
+cor_matrix <- cor(selected_data_3)
+print(cor_matrix)
+corrplot(cor_matrix, method = "color", type = "upper", 
+         tl.col = "black", tl.srt = 45, 
+         col = colorRampPalette(c("blue", "white", "red"))(200))
+
+```
 
 ## Overview
 
@@ -106,6 +130,24 @@ y_i|\mu_i, \sigma &\sim \mbox{Normal}(\mu_i, \sigma) \\
 
 We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. We use the default priors from `rstanarm`.
 
+## MLR Model
+
+```{r}
+fitted_values <- fitted(m1)
+ggplot(data = analysis_data, aes(x = fitted_values, y = mean_temp_F)) +
+  geom_point(color = "blue", alpha = 0.7) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed", size = 1) +
+  labs(x = "Predicted Temperature", y = "Actual Temperature", title = "Actual Temperature vs. Predicted Values")
+
+```
+
+```{r}
+fitted_values <- fitted(m2)
+ggplot(data = analysis_data, aes(x = fitted_values, y = mean_temp_F)) +
+  geom_point(color = "blue", alpha = 0.7) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed", size = 1) +
+  labs(x = "Predicted Temperature", y = "Actual Temperature", title = "Actual Temperature vs. Predicted Values")
+```
 
 ### Model justification
 
