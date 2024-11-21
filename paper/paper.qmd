@@ -21,7 +21,10 @@ library(tidyverse)
 library(here)
 library(arrow)
 library(corrplot)
+library(knitr)
 
+raw_data_climate <- read_csv(here("data/01-raw_data/climateyvr.csv"))
+raw_data_ahccd <- read_csv(here("data/01-raw_data/ahccdyvr.csv"))
 analysis_data <- read_parquet(here("data/02-analysis_data/cleaned_data.parquet"))
 m1 <- readRDS(here("models/mlr_1.rds"))
 m2 <- readRDS(here("models/mlr_2.rds"))
@@ -47,10 +50,6 @@ Results paragraph
 Telegraphing paragraph: The remainder of this paper is structured as follows. @sec-data....
 
 
-
-
-
-
 # Data {#sec-data}
 ```{r}
 
@@ -72,15 +71,61 @@ corrplot(cor_matrix, method = "color", type = "upper",
 
 ```
 
-## Overview
-
-We use the statistical programming language R [@citeR].... Our data [@shelter].... Following @tellingstories, we consider...
-
-Overview text
-
 ## Measurement
-	
-Some paragraphs about how we go from a phenomena in the world to an entry in the dataset.
+
+The measurement of Canadian weather data involves a network of weather stations and data collection methods managed by Environment and Climate Change Canada (ECCC). These stations continuously measure meteorological parameters such as temperature, precipitation, wind speed, and pressure [@meteorological_service_of_canada_past_2023]. 
+
+According to the glossary published by @meteorological_service_of_canada_past_2023, Each day, measurement of temperature, rain, snow, precipitation, and gust speed are recorded. The wind and gust speed is measured in km/h with anemometer dials at a standard height of 10 meters above the ground. Rain and precipitation are measured in millimeter using the standard Canadian rain guage, a cylindrical container 40 cm high and 11.3 cm in diameter. Snow is measured in centimeters at several points that appear representative of the immediate area and then averaged. These raw data
+are combined to one entry and added to the historical climate database with a generated climate id and the station's location and id. Each row also have month and year of the data measured.
+
+For climate research, including climate change studies, @environment_and_climate_change_canada_adjusted_2021 has developed the Adjusted and Homogenized Canadian Climate Data (AHCCD) dataset. This dataset undergoes rigorous quality control and homogenization processes to address non-climatic factors that can affect long-term data consistency, such as station relocations or changes in instrumentation. The AHCCD ensures that observed trends reflect actual climate changes rather than artificial shifts in the data. In the AHCCD dataset, the precipitation, rain, pressure, snow and wind speed are adjusted with models to account for missing data and other non-climate factors. The detailed adjustments and corrections are documented in @sec-methodology. For example, precipitation measurements, which are often underestimated, are adjusted to ensure accuracy, especially in regions like the Arctic [@environment_and_climate_change_canada_climate_2021-1]. In the AHCCD dataset, parameters measured are recorded with the units, date, station ids, location and unique identifiers. The AHCCD data maintains a one-to-one correspondence with the historical weather dataset by a matching station id system, ensuring that each entry in the AHCCD aligns directly with a specific observation in the historical dataset. 
+
+## Raw Data
+
+In this project, we focus on weather data from YVR Airport, extracting only the datasets containing measurements taken at this specific location from the database. In both datasets, each row corresponds to a single averaged observation for a specific month and year. Each entry includes climate information such as temperature and wind speed, with their respective units recorded alongside the values. Additionally, a unique station ID and geographic coordinates (x, y) are included at the beginning of each entry for reference. The column headers of the raw historical weather dataset is displayed in @tbl-raw-climate. The column headers of the AHCCD dataset is displayed in @tbl-raw-ahccd.
+
+```{r}
+#| label: tbl-raw-climate
+#| tbl-cap: Column Headers of Raw Climate Data 
+#| echo: false
+#| warning: false
+raw_data <- raw_data_climate
+
+# Get the column names of your data
+column_names <- colnames(raw_data)
+
+# Reshape the column names into a matrix with, for example, 4 columns
+num_cols <- 3
+column_matrix <- matrix(column_names, ncol = num_cols, byrow = TRUE)
+
+# Convert the matrix to a data frame for kable
+column_df <- as.data.frame(column_matrix)
+
+# Display in multiple columns with kable
+kable(column_df, format = "latex", booktabs = TRUE, col.names = NULL)
+```
+
+```{r}
+#| label: tbl-raw-ahccd
+#| tbl-cap: Column Headers of Raw AHCCD Data 
+#| echo: false
+#| warning: false
+raw_data <- raw_data_ahccd
+
+# Get the column names of your data
+column_names <- colnames(raw_data)
+
+# Reshape the column names into a matrix with, for example, 4 columns
+num_cols <- 2
+column_matrix <- matrix(column_names, ncol = num_cols, byrow = TRUE)
+
+# Convert the matrix to a data frame for kable
+column_df <- as.data.frame(column_matrix)
+
+# Display in multiple columns with kable
+kable(column_df, format = "latex", booktabs = TRUE, col.names = NULL)
+```
+
 
 ## Outcome variables
 
@@ -101,8 +146,6 @@ Talk way more about it.
 Add graphs, tables and text.
 
 Use sub-sub-headings for each outcome variable and feel free to combine a few into one if they go together naturally.
-
-
 
 
 
@@ -187,67 +230,43 @@ Weaknesses and next steps should also be included.
 # License
 Contains information licensed under the [Open Government Licence – Canada](https://open.canada.ca/en/open-government-licence-canada)
 
-# Methodology of ECCC 
-
- 
+# Methodology of ECCC  {#sec-methodology}
 
 The Adjusted and Homogenized Canadian Climate Data (AHCCD) is a collection of climate datasets developed by @environment_and_climate_change_canada_adjusted_2021. These datasets provide long-term, quality-controlled data that have been adjusted to correct for non-climatic influences.  
-
- 
 
 ## Population, Frame, and Sample 
 
 The population of interest in the AHCCD is the entirety of Canada’s climate data, representing diverse geographical regions and climate conditions. The frame of the dataset are the climatological stations maintained by the ECCC that span across the countries in important locations such as airports, and banks of lakes or rivers. These stations record data on climate elements such as temperature, precipitation, surface pressure, and wind speed over extended periods. The sample is the selected stations across Canada, with adjustments applied to address inconsistencies. The datasets cover periods extending back to 1895 for precipitation, while other variables like wind speed and surface pressure start from 1953 or later. The recorded sample consists of monthly, seasonal, and annual data about surface air temperature, precipitation, pressure, and wind speed, according to @environment_and_climate_change_canada_adjusted_2021. 
 
- 
-
 ## Sample Corrections and Adjustments 
 
 The original data for AHCCD are extracted from the National Climate Data Archive of Environment Canada. These data include daily observations, such as maximum and minimum temperatures, precipitation, surface pressure, and wind speed. Observations are quality-controlled and adjusted to correct for biases due to changes in instruments, observation procedures, and other factors.  
 
- 
-
 Precipitation data adjustments account for wind undercatch, evaporation, and gauge-specific losses. According to @environment_and_climate_change_canada_climate_2021-1, corrections to account for wind undercatch, evaporation, and gauge specific wetting losses were implemented, especially in snowy conditions where snowfall is not fully captured by standard gauges. Corrections are made with the study by Devine and Mekis.  
-
- 
 
 Surface air temperature adjustments apply Quantile-Matching techniques to remove inhomogeneities. According to @environment_and_climate_change_canada_climate_2021, With Vincent and Wang's third generation homogenized temperature, Quantile-Matching ensures that the temperature data remain consistent across different periods, even when observation practices change. 
 
- 
-
 Surface pressure and wind speed data undergo adjustments based on metadata and statistical tests for systematic shifts. According to @environment_and_climate_change_canada_climate_2021-2, wind speed is first adjusted with a logarithmic wind profile, then tested for homogeneity using a technique based on regression models. It involves the identification of variation due to changes in anemometer and location change. The pressure data is corrected due to systematic shifts of non-updated station elevation and relocation, as stated by @environment_and_climate_change_canada_climate_2021-3. 
-
- 
 
 ## Sampling Approach and Trade-offs 
 
- 
-
 According to the published methodology and the webpage by @dunbar_adjusted_2020, they employ a systematic sampling approach by selecting specific climatological stations with long-term, consistent data records. In some cases, observations from neighboring or overlapping stations are merged to extend time series. The AHCCD dataset may also contain missing values, which can vary depending on the variable, station, and time. Additionally, the AHCCD dataset is site-specific, meaning it provides data specific to individual observation stations.  
-
- 
 
 ## Missing Data Handling 
 
 Non-response, such as gaps in the data due to missing records, is managed by employing statistical and physical methods to homogenize the data. For instance, the AHCCD adjusts for shifts detected through historical evidence and metadata analysis. For large amount of missing data, ECCC mark the data as NA in the dataset [@canadian_centre_for_climate_services_adjusted_2022]. 
 
- 
-
 ## Strengths and Weaknesses 
 
 The AHCCD by @dunbar_adjusted_2020 provides long-term, high-quality climate records adjusted for non-climatic factors such as changes in instrumentation, observation procedures, and station relocations, ensuring consistency and reliability for trend analysis in climate change.  
 
- 
-
 The documentation acknowledges the possibility of missing values, which naturally arise in long-term observational datasets due to factors such as station interruptions, relocation, or equipment malfunctions [@environment_and_climate_change_canada_adjusted_2021]. Moreover, the dataset’s coverage in Arctic regions is limited to the restricted to the mid-1940s to present, as this limitation reflects the historical absence of earlier systematic observations in these remote regions. 
+
 # Posterior predictive check
 
 In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. This shows...
 
 In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
-
-
-
 
 \newpage
 
