@@ -126,29 +126,20 @@ column_df <- as.data.frame(column_matrix)
 kable(column_df, format = "latex", booktabs = TRUE, col.names = NULL)
 ```
 
+The variables in the two datasets contains the following: 
 
-## Outcome variables
-
-Add graphs, tables and text. Use sub-sub-headings for each outcome variable or update the subheading to be singular.
-
-
-
-Some of our data is of penguins (@fig-bills), from @palmerpenguins.
-
-Talk more about it.
-
-And also planes (@fig-planes). (You can change the height and width, but don't worry about doing that until you have finished every other aspect of the paper - Quarto will try to make it look nice and the defaults usually work well once you have enough text.)
-
-Talk way more about it. 
-
-## Predictor variables
-
-Add graphs, tables and text.
-
-Use sub-sub-headings for each outcome variable and feel free to combine a few into one if they go together naturally.
+- Geographical Information: Longitude (x) and Latitude (y), with corresponding identifiers for location (Station Name in @tbl-raw-climate, station_id and province in @tbl-raw-ahccd).
+- Temperature Metrics: Mean, maximum, and minimum temperatures (Mean Temp, Mean Max Temp, Mean Min Temp, Extr Max Temp, Extr Min Temp) and associated flags for data validity in @tbl-raw-climate. Similar metrics (temp_mean, temp_max, temp_min) in @tbl-raw-ahccd, with additional units included.
+- Precipitation and Snowfall: Total precipitation (Total Precip) and total snow (Total Snow), with flags for data quality in @tbl-raw-climate. Equivalent precipitation and snow variables (total_precip, snow) in @tbl-raw-ahccd, with units explicitly defined.
+- Wind and Gust Metrics: Direction and speed of maximum gusts (Dir of Max Gust, Spd of Max Gust) in @tbl-raw-climate, with units and flags. Wind speed (wind_speed) and related metrics in @tbl-raw-ahccd, with units included.
+- Pressure Information: Sea level and station pressure variables in @tbl-raw-ahccd (pressure_sea_level, pressure_station) with units.
+- Temporal Information: Date and time variables (Date/Time in @tbl-raw-climate, date, period_value in @tbl-raw-ahccd) to track observations across time periods.
+- Flags and Identifiers: Flags for data validity in both tables, such as precipitation flags, temperature flags, and identifiers like Climate ID or identifier.
 
 
+## Data Cleaning
 
+### 
 
 
 

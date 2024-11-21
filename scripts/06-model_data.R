@@ -22,33 +22,39 @@ analysis_data <- read_parquet("data/02-analysis_data/cleaned_data.parquet")
 
 ### Model data ####
 
+set.seed(123)
+train_indices <- sample(1:nrow(analysis_data), size = 0.7 * nrow(analysis_data))
+train_data <- analysis_data[train_indices, ]
+test_data <- analysis_data[-train_indices, ]
+
 # MLR
 
 m1 <- lm(mean_temp_F ~ wind_speed + total_precipitation + snow +
-  pressure_station + max_temp + min_temp + total_rain + gust_speed_km_h, data = analysis_data)
+  pressure_station + max_temp + min_temp + total_rain + gust_speed_km_h, data = train_data)
 summary(m1)
 
 m2 <- lm(mean_temp_F ~ wind_speed + total_precipitation + snow +
-  pressure_station + total_rain + gust_speed_km_h, data = analysis_data)
+  pressure_station + total_rain + gust_speed_km_h, data = train_data)
 summary(m2)
 
 m3 <- lm(mean_temp_F ~ wind_speed + total_precipitation +
-  pressure_station + total_rain + gust_speed_km_h, data = analysis_data)
+  pressure_station + total_rain + gust_speed_km_h, data = train_data)
 summary(m3)
 
 m4 <- lm(mean_temp_F ~ wind_speed +
-  pressure_station + total_rain + gust_speed_km_h, data = analysis_data)
+  pressure_station + total_rain + gust_speed_km_h, data = train_data)
 summary(m4)
 
 AIC(m3)
 AIC(m4)
 # Bayesian Model
-hist(analysis_data$log_mean_temp)
+hist(train_data$log_mean_temp)
+
 
 bayesian_model_log <- brm(
   formula = log_mean_temp ~ wind_speed + total_precipitation + pressure_station +
     total_rain + gust_speed_km_h,
-  data = analysis_data,
+  data = train_data,
   family = gaussian(),
   prior = c(
     prior(normal(0, 10), class = "b"), # Priors for coefficients
@@ -69,7 +75,7 @@ plot(residuals(bayesian_model_log))
 glm_model <- glm(
   mean_temp_F ~ wind_speed + total_precipitation + pressure_station +
     total_rain + gust_speed_km_h,
-  data = analysis_data,
+  data = train_data,
   family = gaussian()
 )
 
@@ -79,7 +85,7 @@ modelsummary(glm_model)
 glm_model_log <- glm(
   log_mean_temp ~ wind_speed + total_precipitation + pressure_station +
     total_rain + gust_speed_km_h,
-  data = analysis_data,
+  data = train_data,
   family = gaussian()
 )
 
@@ -88,10 +94,7 @@ modelsummary(glm_model_log)
 
 
 #### Validation Testing ####
-set.seed(123)
-train_indices <- sample(1:nrow(analysis_data), size = 0.7 * nrow(analysis_data))
-train_data <- analysis_data[train_indices, ]
-test_data <- analysis_data[-train_indices, ]
+#### Validation Testing ####
 
 # GLM
 glm_model <- glm_model_log
@@ -99,48 +102,81 @@ glm_model <- glm_model_log
 # BRM
 brm_model <- bayesian_model_log
 
-# GLM predictions
-glm_predictions <- predict(glm_model, newdata = test_data)
+# GLM predictions (reverse log transformation and convert to Celsius)
+glm_predictions_log <- predict(glm_model, newdata = test_data)
+glm_predictions_F <- exp(glm_predictions_log)  # Predicted in Fahrenheit
+glm_predictions <- (glm_predictions_F - 32) * 5 / 9  # Convert to Celsius
 
-# BRM predictions
-brm_predictions <- colMeans(posterior_predict(brm_model, newdata = test_data))
+# BRM predictions (posterior predictive mean, reverse log transformation and convert to Celsius)
+brm_predictions_log <- colMeans(posterior_predict(brm_model, newdata = test_data))
+brm_predictions_F <- exp(brm_predictions_log)  # Predicted in Fahrenheit
+brm_predictions <- (brm_predictions_F - 32) * 5 / 9  # Convert to Celsius
 
-# RMSE
-rmse_glm <- sqrt(mean((test_data$mean_temp - glm_predictions)^2))
-rmse_brm <- sqrt(mean((test_data$mean_temp - brm_predictions)^2))
+# Ensure consistency: Predicted and actual values in Celsius
+test_data <- test_data %>%
+  mutate(
+    actual_mean_temp = mean_temp,      # Actual values (Celsius)
+    glm_predicted = glm_predictions,  # GLM predictions (Celsius)
+    brm_predicted = brm_predictions   # Bayesian predictions (Celsius)
+  )
 
-# MAE
-mae_glm <- mean(abs(test_data$mean_temp - glm_predictions))
-mae_brm <- mean(abs(test_data$mean_temp - brm_predictions))
+# Calculate RMSE
+rmse_glm <- sqrt(mean((test_data$actual_mean_temp - test_data$glm_predicted)^2))
+rmse_brm <- sqrt(mean((test_data$actual_mean_temp - test_data$brm_predicted)^2))
 
-# Compare results
+# Calculate MAE
+mae_glm <- mean(abs(test_data$actual_mean_temp - test_data$glm_predicted))
+mae_brm <- mean(abs(test_data$actual_mean_temp - test_data$brm_predicted))
+
+# Output Results
 print(c(GLM_RMSE = rmse_glm, BRM_RMSE = rmse_brm))
 print(c(GLM_MAE = mae_glm, BRM_MAE = mae_brm))
 
-plot(glm_model)
+# Visualize actual vs predicted
+library(ggplot2)
 
-#### Save model ####
-saveRDS(
-  brm_model,
-  file = "models/brm_model.rds"
+# GLM vs Actual
+ggplot(test_data, aes(x = actual_mean_temp)) +
+  geom_point(aes(y = glm_predicted, color = "GLM Predictions")) +
+  geom_point(aes(y = actual_mean_temp, color = "Actual Values")) +
+  labs(
+    title = "GLM Model: Actual vs Predicted Mean Temperature",
+    x = "Actual Mean Temperature (°C)",
+    y = "Predicted Mean Temperature (°C)",
+    color = "Legend"
+  ) +
+  theme_minimal()
+
+# BRM vs Actual
+ggplot(test_data, aes(x = actual_mean_temp)) +
+  geom_point(aes(y = brm_predicted, color = "BRM Predictions")) +
+  geom_point(aes(y = actual_mean_temp, color = "Actual Values")) +
+  labs(
+    title = "Bayesian Model: Actual vs Predicted Mean Temperature",
+    x = "Actual Mean Temperature (°C)",
+    y = "Predicted Mean Temperature (°C)",
+    color = "Legend"
+  ) +
+  theme_minimal()
+
+# Combined Visualization for GLM and BRM
+ggplot(test_data, aes(x = actual_mean_temp)) +
+  geom_point(aes(y = glm_predicted, color = "GLM Predictions")) +
+  geom_point(aes(y = brm_predicted, color = "BRM Predictions")) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray") +
+  labs(
+    title = "GLM vs BRM: Actual vs Predicted Mean Temperature",
+    x = "Actual Mean Temperature (°C)",
+    y = "Predicted Mean Temperature (°C)",
+    color = "Legend"
+  ) +
+  theme_minimal()
+
+# Tabular Comparison
+model_comparison <- tibble(
+  Model = c("GLM", "Bayesian"),
+  RMSE = c(rmse_glm, rmse_brm),
+  MAE = c(mae_glm, mae_brm)
 )
 
-saveRDS(
-  glm_model,
-  file = "models/glm_model.rds"
-)
-
-saveRDS(
-  m1,
-  file = "models/mlr_1.rds"
-)
-
-saveRDS(
-  m2,
-  file = "models/mlr_2.rds"
-)
-saveRDS(m4, file = "models/mlr_4.rds")
-saveRDS(
-  glm_model,
-  file = "models/glm_nolog.rds"
-)
+print(model_comparison)
