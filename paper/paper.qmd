@@ -36,6 +36,52 @@ glm <- readRDS(here("models/glm_model.rds"))
 brm <- readRDS(here("models/brm_model.rds"))
 ```
 
+```{r}
+# Calculate diagnostic measures
+glm_model <- glm
+# Assuming `glm_model` is your fitted model
+
+# 1. Linearity: Residuals vs Fitted Plot
+plot(glm_model, which = 1, main = "Linearity Check: Residuals vs Fitted")
+# Look for a random scatter of points. Patterns indicate non-linearity.
+
+# 2. Homoscedasticity: Scale-Location Plot
+plot(glm_model, which = 3, main = "Homoscedasticity Check: Scale-Location")
+# Points should be evenly spread. A funnel shape indicates heteroscedasticity.
+
+# 3. Normality of Residuals: Q-Q Plot
+plot(glm_model, which = 2, main = "Normality Check: Q-Q Plot")
+# Points should lie approximately along the diagonal line.
+
+# 4. Residual Histogram: Another Normality Check
+residuals <- residuals(glm_model)
+hist(residuals, main = "Histogram of Residuals", xlab = "Residuals")
+# Check for symmetry. A skewed histogram suggests non-normal residuals.
+
+# 5. Multicollinearity: Variance Inflation Factor (VIF)
+library(car)
+vif_values <- vif(glm_model)
+print(vif_values)
+# VIF > 5 indicates high multicollinearity. Consider removing highly correlated predictors.
+
+# 6. Cook's Distance: Influence of Observations
+cooksd <- cooks.distance(glm_model)
+plot(cooksd, main = "Cook's Distance", type = "h")
+abline(h = 4 / nrow(model.frame(glm_model)), col = "red", lty = 2)
+# Points above the red line are highly influential.
+
+# 7. Leverage: Identify High Leverage Points
+leverage <- hatvalues(glm_model)
+plot(leverage, main = "Leverage Check", type = "h")
+abline(h = 2 * mean(leverage), col = "red", lty = 2)
+# Points above the red line have high leverage.
+
+# 8. Correlation Between Predictors
+cor_matrix <- cor(model.frame(glm_model)[, -1]) # Exclude response variable
+print(round(cor_matrix, 2))
+# Check for highly correlated predictors (e.g., correlation > 0.8 or < -0.8).
+
+```
 
 # Introduction
 
@@ -250,24 +296,24 @@ boxplot(analysis_data$snow,
 ```{r}
 #| label: fig-corr-temp
 #| fig-cap: Temperature Values Have High Correlations
-#| fig-subcap: ['High Correlations Between Max, Min and Mean Temperature', 'Other Predictors Does Not Have High Correlations', 'Linear Relationship Between Max and Mean Temperature', 'Linear Relationship Between Min and Mean Temperature']
+#| fig-subcap: ['High Correlations Between Max, Min and Mean Temperature, Total Precip and Rain', 'Other Predictors Does Not Have High Correlations', 'Linear Relationship Between Max and Mean Temperature', 'Linear Relationship Between Min and Mean Temperature']
 #| echo: false
 #| warning: false
 #| layout-ncol: 2
-selected_data_0 <- analysis_data[, c("wind_speed", "pressure_station", "snow",  "min_temp", "log_mean_temp", 'max_temp', "total_rain", "gust_speed_km_h")]
+selected_data_0 <- analysis_data[, c("wind_speed", "pressure_station", "snow",  "min_temp", "log_mean_temp", 'max_temp', "total_rain", "gust_speed_km_h", 'total_precipitation')]
 colnames(selected_data_0) <- c("Wind Speed (km/h)", "Station Pressure (hPa)", "Snow (cm)", 
                                "Min Temperature (°C)", "Log Mean Temperature (°F)", 
                                "Max Temperature (°C)", "Total Rain (mm)", 
-                               "Gust Speed (km/h)")
+                               "Gust Speed (km/h)", "Total Precipitation (mm)")
 
 cor_matrix <- cor(selected_data_0)
 corrplot(cor_matrix, method = "color", type = "upper", 
          tl.col = "black", tl.srt = 45, 
          col = colorRampPalette(c("blue", "white", "red"))(200))
 
-selected_data_1 <- analysis_data[, c("wind_speed", "pressure_station", "snow", "log_mean_temp", "total_rain", "gust_speed_km_h")]
+selected_data_1 <- analysis_data[, c("wind_speed", "pressure_station", "snow", "log_mean_temp", "total_precipitation", "gust_speed_km_h")]
 colnames(selected_data_1) <- c("Wind Speed (km/h)", "Station Pressure (hPa)", "Snow (cm)", 
-                               "Log Mean Temperature (°F)", "Total Rain (mm)", 
+                               "Log Mean Temperature (°F)", "Total Precip (mm)", 
                                "Gust Speed (km/h)")
 
 cor_matrix <- cor(selected_data_1)

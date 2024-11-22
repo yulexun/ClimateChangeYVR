@@ -109,7 +109,20 @@ glm_model_log <- glm(
   data = train_data,
   family = gaussian()
 )
+# Adding polynomial transformations to the model
+glm_model_poly <- glm(
+  log_mean_temp ~ 
+    poly(wind_speed, 2) +                   # Quadratic polynomial for wind_speed
+    poly(pressure_station, 2) +            # Quadratic polynomial for pressure_station
+    poly(total_precipitation_boxcox, 2) +  # Quadratic polynomial for total_precipitation_boxcox
+    poly(log_gust_speed, 2),               # Quadratic polynomial for log_gust_speed
+  data = train_data,
+  family = gaussian()
+)
 
+# Summary of the model
+summary(glm_model_poly)
+modelsummary(glm_model_poly)
 summary(glm_model_log)
 modelsummary(glm_model_log)
 
@@ -201,7 +214,7 @@ model_comparison <- tibble(
 
 print(model_comparison)
 
-model <- glm_model_log
+model <- glm_model_poly
 
 # Extract residuals and fitted values
 residuals <- resid(model)
