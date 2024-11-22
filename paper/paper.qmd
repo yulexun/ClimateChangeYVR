@@ -58,12 +58,6 @@ The data gathering and analysis is done in R [@citeR] with the following package
 
 # Data {#sec-data}
 
-
-<!-- ```{r}
-pairs(as.data.frame(selected_data_0), main = "Pairwise Scatterplots (Including Max Temp, and Min Temp)"),
-pairs(as.data.frame(selected_data_1), main = "Pairwise Scatterplots (Excluding Max Temp, and Min Temp)")
-``` -->
-
 ## Measurement
 
 The measurement of Canadian weather data involves a network of weather stations and data collection methods managed by Environment and Climate Change Canada (ECCC). These stations continuously measure meteorological parameters such as temperature, precipitation, wind speed, and pressure [@meteorological_service_of_canada_past_2023]. 
@@ -390,7 +384,7 @@ analysis_data |>
 ```
 \newpage
 
-# Methodology of ECCC  {#sec-methodology}
+# Methodology of ECCC {#sec-methodology}
 
 The Adjusted and Homogenized Canadian Climate Data (AHCCD) is a collection of climate datasets developed by @environment_and_climate_change_canada_adjusted_2021. These datasets provide long-term, quality-controlled data that have been adjusted to correct for non-climatic influences.  
 
