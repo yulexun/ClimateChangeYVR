@@ -137,8 +137,10 @@ $$
 $$
 \log(\text{mean\_temp\_F})
 $$
-.
-All column names were cleaned and standardized using `janitor` in @tidyverse to ensure consistency and readability. Dates were parsed into a unified format (`yyyy-mm-dd`) and aligned with monthly observations using the @lubridate package. The datasets were merged into a single combined dataset using the `date_time` variable as the common key. Finally, constructed variables, including `mean_temp_F` and `log_mean_temp`, were added to facilitate advanced modeling techniques.
+. 
+Additionally, a Box-Cox transformation was applied to the `total_precipitation` variable to address skewness and stabilize variance, resulting in the new variable `total_precipitation_boxcox`. For `gust_speed_km_h`, a log transformation was used to stabilize variance and reduce right-skewness in its distribution, creating the new variable `log_gust_speed`. 
+
+All column names were cleaned and standardized using `janitor` in tidyverse [@tidyverse] to ensure consistency and readability. Dates were parsed into a unified format (`yyyy-mm-dd`) and aligned with monthly observations using the lubridate package [@lubridate]. The datasets were merged into a single combined dataset using the `date_time` variable as the common key. Finally, constructed variables, including `mean_temp_F`, `total_precipitation_boxcox`, `log_gust_speed` and `log_mean_temp`, were added to the cleaned data. 
 
 ## Cleaned Data
 
@@ -151,17 +153,34 @@ The top 6 rows of the cleaned data is displayed in @tbl-cleaned-data.
 #| warning: false
 analysis_data |>
   head(6) |>
-  mutate(log_mean_temp = round(log_mean_temp, 2)) |>
+  select(
+    wind_speed, total_precipitation, snow, pressure_station, 
+    max_temp, min_temp, mean_temp, total_rain
+  ) |>
+  mutate(across(everything(), ~ round(., 2))) |>
   kable(
-    col.names = c("Date", "Wind Speed", "Total Precipitation", "Snow", "Pres.", "Max Temp", "Min Temp", "Mean Temp", "Rain", "Max Gust Speed", "Mean Temp in F", "Log of Mean Temp"),
-    booktabs = TRUE
-    ) 
+    col.names = c("Wind Speed", "Total Precip.", "Snow", "Pressure", 
+                  "Max Temp", "Min Temp", "Mean Temp", "Rain"),
+    align = "c",  # Center-align all columns
+    format = "latex"  # Ensure LaTeX output
+  )
+analysis_data |>
+  head(6) |>
+  select(
+    gust_speed_km_h, log_mean_temp, total_precipitation_boxcox, log_gust_speed
+  ) |>
+  mutate(across(everything(), ~ round(., 2))) |>
+  kable(
+    col.names = c("Gust Speed", "Log of Mean Temp", "Box-Cox Total Precip.", "Log of Gust Speed"),
+    align = "c",  # Center-align all columns
+    format = "latex"  # Ensure LaTeX output
+  )
 ```
 
 The summary statistics of the combined dataset is displayed in @tbl-summary.
 
 ## Characteristics of Cleaned Data
-### Skewness in Mean Temperature
+### Skewness in Mean Temperature, Total Precipitation and Gust Speed
 
 ```{r}
 #| label: fig-hist-temp
@@ -195,6 +214,9 @@ hist(log_mean_temp,
 
 @fig-hist-temp displays the histogram of the response variable Mean Temperature. @fig-hist-temp-1 shows the original mean temperature, which is skewed and includes negative values, making it unsuitable for direct modeling. To address this, We first transformed the data to Fahrenheit in @fig-hist-temp-2, shifting all values to be positive. However, to further normalize the distribution and reduce skewness, we applied a logarithmic transformation in @fig-hist-temp-3. The log transformation stabilizes variance, improves symmetry, and addresses non-linearity in the data, making it more appropriate for modelling. 
 
+In @fig-hist-all, Transformations are also applied to Total Precipitation and Gust Speed. Total Precipitation has a strong right skew, with most values low and a few extreme high values. A logarithmic transformation is used to compress the large values, reducing skewness and making the distribution more symmetric. For Gust Speed, a Box-Cox transformation is applied to adjust its moderate skewness. This transformation reshaped the data to better approximate a normal distribution. These adjustments improve the suitability of these variables for statistical analyses that assume normality.
+
+
 ### Total Snow Is Zero-Inflated
 
 @fig-boxplot-snow clearly shows significant zero inflation, with a large number of observations concentrated at zero and a few extreme outliers far above the majority of the data. This distribution suggests that the variable snow contains excessive structural zeros, likely representing instances where no snowfall occurred.
@@ -219,7 +241,9 @@ boxplot(analysis_data$snow,
         notch = TRUE)
 ```
 
-### Maximum Temperature, Minimum Temperature and Mean Temperature Has Strong Linear Relationships
+### Some Variables Has Strong Linear Relationships
+
+#### Maximum Temperature, Minimum Temperature and Mean Temperature
 
 @fig-corr-temp-1 highlights strong relationships between temperature variables, showing strong positive correlations between Max Temperature (°C), Min Temperature (°C), and Mean Temperature (°C). Scatter plots in @fig-corr-temp-3 and @fig-corr-temp-4 show near-perfect linear relationships, indicating that Max Temperature (°C) and Min Temperature (°C) are highly collinear with Mean Temperature (°C). In contrast, other predictors shown in @fig-corr-temp-2, such as Wind Speed (km/h), Station Pressure (hPa), and Total Rain (mm), show weaker correlations with the temperature variables and with each other, suggesting they contribute unique and independent information to the model.
 
@@ -267,6 +291,25 @@ ggplot(analysis_data, aes(x = `min_temp`, y = `mean_temp`)) +
   labs(title = "Correlation: Min Temperature vs. Mean Temperature",
        x = "Min Temperature (°C)",
        y = "Mean Temperature (°C)") +
+  theme_minimal()
+```
+
+#### Total Precipitation and Total Rain
+
+Similar to temperature, precipitation and total rain also have a relatively strong linear relationship as illustrated in @fig-corr-rain.
+
+```{r}
+#| label: fig-corr-rain
+#| fig-cap: Precipitation and Rain Have High Correlations
+#| echo: false
+#| warning: false
+
+ggplot(analysis_data, aes(x = `total_precipitation`, y = `total_rain`)) +
+  geom_point(color = "green", alpha = 0.6) +   # Scatter plot
+  geom_smooth(method = "lm", se = FALSE, color = "red") +  # Add linear trendline
+  labs(title = "Correlation: Total Precipitation vs. Total Rain",
+       x = "Total Precipitation (mm)",
+       y = "Total Rain (mm)") +
   theme_minimal()
 ```
 
@@ -381,8 +424,71 @@ analysis_data |>
     align = "c",  # Center-align all columns
     format = "latex"  # Ensure LaTeX output
   )
+analysis_data |>
+  select(total_precipitation_boxcox, log_gust_speed) |>
+  summary() |>
+  kable(
+    col.names = c(
+      "Box Cox of Precipitation", "Log of Gust Speed"
+    ),
+    booktabs = TRUE,
+    align = "c",  # Center-align all columns
+    format = "latex"  # Ensure LaTeX output
+  )
 ```
 \newpage
+
+```{r}
+#| label: fig-hist-all
+#| fig-cap: Other Variables Show Normal Distribution
+#| fig-subcap: ['Wind Speed Shows Symmetric Distribution', 'Total Precipitation Shows Normal Distribution but Skewed Towards Low Values', 'Pressure Station Has a Nearly Normal Distribution', 'Gust Speed Shows Normal Distribution and Moderate Skewness', 'Box-Cox Transformed Gust Speed shows Reduces Skewness', 'Log Transformed Gust Speed shows Reduces Skewness']
+#| echo: false
+#| warning: false
+#| layout-ncol: 2
+
+df <- analysis_data
+
+# Plot histogram for wind_speed
+ggplot(df, aes(x = wind_speed)) +
+  geom_histogram(fill = "blue", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Wind Speed", x = "Wind Speed (km/h)", y = "Frequency") +
+  theme_minimal()
+
+# Plot histogram for total_precipitation
+ggplot(df, aes(x = total_precipitation)) +
+  geom_histogram(fill = "green", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Total Precipitation", x = "Total Precipitation (mm)", y = "Frequency") +
+  theme_minimal()
+
+# Plot histogram for pressure_station
+ggplot(df, aes(x = pressure_station)) +
+  geom_histogram(fill = "black", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Pressure Station", x = "Pressure (hPa)", y = "Frequency") +
+  theme_minimal()
+
+ggplot(df, aes(x = gust_speed_km_h)) +
+  geom_histogram(fill = "red", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Pressure Station", x = "Pressure (hPa)", y = "Frequency") +
+  theme_minimal()
+
+# Plot histogram for gust_speed_km_h
+ggplot(df, aes(x = total_precipitation_boxcox)) +
+  geom_histogram(fill = "green", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Box-Cox of Gust Speed", x = "Gust Speed (km/h)", y = "Frequency") +
+  theme_minimal()
+
+ggplot(df, aes(x = log_gust_speed)) +
+  geom_histogram(fill = "red", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Log of Gust Speed", x = "Gust Speed (km/h)", y = "Frequency") +
+  theme_minimal()
+
+
+```
+
+```{r}
+# Fit a model
+
+```
 
 # Methodology of ECCC {#sec-methodology}
 

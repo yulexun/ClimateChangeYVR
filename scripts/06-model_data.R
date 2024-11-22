@@ -53,11 +53,23 @@ AIC(m4)
 hist(train_data$log_mean_temp)
 
 
-bayesian_model_log <- brm(
-  formula = log_mean_temp ~ wind_speed + total_precipitation + pressure_station +
-    total_rain + gust_speed_km_h,
+bayesian_model_log_1 <- brm(
+  formula = log_mean_temp ~ wind_speed + pressure_station +
+    total_precipitation + gust_speed_km_h,
   data = train_data,
-  family = gaussian(),
+  family = lognormal(),
+  prior = c(
+    prior(normal(0, 10), class = "b"), # Priors for coefficients
+    prior(normal(0, 10), class = "Intercept") # Prior for the intercept
+  ),
+  chains = 4, iter = 2000, cores = 4
+)
+
+bayesian_model_log <- brm(
+  formula = log_mean_temp ~ wind_speed + pressure_station +
+    total_precipitation_boxcox + log_gust_speed,
+  data = train_data,
+  family = lognormal(),
   prior = c(
     prior(normal(0, 10), class = "b"), # Priors for coefficients
     prior(normal(0, 10), class = "Intercept") # Prior for the intercept
@@ -75,8 +87,8 @@ plot(residuals(bayesian_model_log))
 
 # GLM
 glm_model <- glm(
-  mean_temp_F ~ wind_speed + total_precipitation + pressure_station +
-    total_rain + gust_speed_km_h,
+  mean_temp_F ~ wind_speed + pressure_station +
+    total_precipitation + gust_speed_km_h,
   data = train_data,
   family = gaussian()
 )
@@ -84,9 +96,16 @@ glm_model <- glm(
 summary(glm_model)
 modelsummary(glm_model)
 
+glm_model_log_1 <- glm(
+  log_mean_temp ~ wind_speed + pressure_station +
+    total_precipitation + gust_speed_km_h,
+  data = train_data,
+  family = gaussian()
+)
+
 glm_model_log <- glm(
-  log_mean_temp ~ wind_speed + total_precipitation + pressure_station +
-    total_rain + gust_speed_km_h,
+  log_mean_temp ~ wind_speed + pressure_station +
+    total_precipitation_boxcox + log_gust_speed,
   data = train_data,
   family = gaussian()
 )
@@ -95,7 +114,6 @@ summary(glm_model_log)
 modelsummary(glm_model_log)
 
 
-#### Validation Testing ####
 #### Validation Testing ####
 
 # GLM
@@ -182,3 +200,17 @@ model_comparison <- tibble(
 )
 
 print(model_comparison)
+
+model <- glm_model_log
+
+# Extract residuals and fitted values
+residuals <- resid(model)
+fitted_values <- fitted(model)
+
+# Plot residuals vs fitted values
+plot(fitted_values, residuals,
+     xlab = "Fitted Values",
+     ylab = "Residuals",
+     main = "Residuals vs Fitted Values",
+     pch = 19, col = "blue")
+abline(h = 0, col = "red")  # Add horizontal line at zero
