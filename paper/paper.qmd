@@ -22,10 +22,13 @@ library(here)
 library(arrow)
 library(corrplot)
 library(knitr)
+library(kableExtra)
 
 raw_data_climate <- read_csv(here("data/01-raw_data/climateyvr.csv"))
 raw_data_ahccd <- read_csv(here("data/01-raw_data/ahccdyvr.csv"))
 analysis_data <- read_parquet(here("data/02-analysis_data/cleaned_data.parquet"))
+train_data <- read_parquet(here("data/02-analysis_data/train_data.parquet"))
+test_data <- read_parquet(here("data/02-analysis_data/test_data.parquet"))
 m1 <- readRDS(here("models/mlr_1.rds"))
 m2 <- readRDS(here("models/mlr_2.rds"))
 glm_nolog <- readRDS(here("models/glm_nolog.rds"))
@@ -38,9 +41,11 @@ brm <- readRDS(here("models/brm_model.rds"))
 
 Climate change is a global challenges today. Patterns such as rising temperatures, shifting weather systems, and increased frequency of severe weather events. In 2021, floods swept through streets in Japanese cities, displacing millions, while extreme heat fueled wildfires in Siberia [@greenpeace_east_asia_5_2021]. Climate change impacts human health, ecosystems, food security, water supplies, and economic stability. Understanding the factors driving temperature changes is necessary for designing effective mitigation strategies. This requires examining the various contributors to temperature variations.
 
-Some scholars have examined the changing climate. @xu_melting_2009 analyze the effects of rising temperatures in the Himalayas, highlighting increased frequency and duration of extreme events and shifts in ecosystems. These changes pose challenges to water supply, agriculture, and human populations. @visser_eliminating_2021 investigates the relationship between precipitation and temperature using data from the Australian Bureau of Meteorology. Visser's regression model indicates that average precipitation intensities increase with temperature, suggesting more intense rainfall in a warmer climate. The role of sea level pressure is also significant. @wills_systematic_2022 note that observed trends in sea level pressure have intensified warming in the Indo-Pacific Warm Pool and caused slight cooling in the eastern equatorial Pacific. However, as @zhang_economic_2017 argue, much of the research has focused on temperature and precipitation. @zhang_economic_2017 expands on this by incorporating additional predictors—relative humidity and wind speed—and concludes, using data from the Ministry of Agriculture of China, that these variables are important in understanding climate dynamics.
+Some scholars have examined the changing climate. @xu_melting_2009 analyze the effects of rising temperatures in the Himalayas, highlighting increased frequency and duration of extreme events and shifts in ecosystems. These changes pose challenges to water supply, agriculture, and human populations. @visser_eliminating_2021 investigates the relationship between precipitation and temperature using data from the Australian Bureau of Meteorology. Visser's regression model indicates that average precipitation intensities increase with temperature, suggesting more intense rainfall in a warmer climate. The role of sea level pressure is also significant. @wills_systematic_2022 note that observed trends in sea level pressure have intensified warming in the Indo-Pacific Warm Pool and caused slight cooling in the eastern equatorial Pacific. However, as @zhang_economic_2017 argue, much of the research has focused on temperature and precipitation. @zhang_economic_2017 expands on this by incorporating additional predictors—relative humidity and wind speed—and concludes, using data from the Ministry of Agriculture of China, that these variables are important in understanding climate dynamics. 
 
-With the data obtained from @canadian_centre_for_climate_services_adjusted_2022 and @meteorological_service_of_canada_past_2023, this research paper aims to identify the factors influencing temperature at Vancouver International Airport. Located on the west coast of Richmond, the airport sits on Sea Island, surrounded by water. As a transportation hub for passengers and freight, it is important to assess the location's safety in a warming climate.
+Temperatures significantly impact airport operations. Rising temperatures significantly affect aircraft performance, potentially leading to take-off weight restrictions and the need for longer runways. This directly impacts airport capacity and operations [@coffel_climate_2015]. Temperature forecast models vary in different locations, and different regions have unique climate characteristics that models may not fully capture [@american_meteorological_society_weather_nodate]. 
+
+This research paper aims to identify the factors influencing temperature at Vancouver International Airport and build a model for temperature prediction with the data obtained from @canadian_centre_for_climate_services_adjusted_2022 and @meteorological_service_of_canada_past_2023. Located on the west coast of Richmond, the airport sits on Sea Island, surrounded by water. As a transportation hub for passengers and freight, it is important to assess the location's safety in a warming climate.
 
 
 Estimand paragraph
@@ -49,36 +54,25 @@ Results paragraph
 
 Telegraphing paragraph: The remainder of this paper is structured as follows. @sec-data....
 
+The data gathering and analysis is done in R [@citeR] with the following packages: knitr [@knitr], tidyverse [@tidyverse], ggplot2 [@ggplot2], dplyr [@dplyr], arrow [@arrow], here [@here], and lubridate [@lubridate].
 
 # Data {#sec-data}
-```{r}
 
-selected_data_1 <- analysis_data[, c("wind_speed", "pressure_station", "snow", "log_mean_temp", "total_rain", "gust_speed_km_h")]
+
+<!-- ```{r}
+pairs(as.data.frame(selected_data_0), main = "Pairwise Scatterplots (Including Max Temp, and Min Temp)"),
 pairs(as.data.frame(selected_data_1), main = "Pairwise Scatterplots (Excluding Max Temp, and Min Temp)")
-cor_matrix <- cor(selected_data_1)
-print(cor_matrix)
-corrplot(cor_matrix, method = "color", type = "upper", 
-         tl.col = "black", tl.srt = 45, 
-         col = colorRampPalette(c("blue", "white", "red"))(200))
-
-selected_data_3 <- analysis_data[, c("wind_speed", "pressure_station", "log_mean_temp", "total_rain", "gust_speed_km_h")]
-pairs(as.data.frame(selected_data_3), main = "Pairwise Scatterplots of log transformed temperature (Excluding Snow, Max Temp, and Min Temp)")
-cor_matrix <- cor(selected_data_3)
-print(cor_matrix)
-corrplot(cor_matrix, method = "color", type = "upper", 
-         tl.col = "black", tl.srt = 45, 
-         col = colorRampPalette(c("blue", "white", "red"))(200))
-
-```
+``` -->
 
 ## Measurement
 
 The measurement of Canadian weather data involves a network of weather stations and data collection methods managed by Environment and Climate Change Canada (ECCC). These stations continuously measure meteorological parameters such as temperature, precipitation, wind speed, and pressure [@meteorological_service_of_canada_past_2023]. 
 
-According to the glossary published by @meteorological_service_of_canada_past_2023, Each day, measurement of temperature, rain, snow, precipitation, and gust speed are recorded. The wind and gust speed is measured in km/h with anemometer dials at a standard height of 10 meters above the ground. Rain and precipitation are measured in millimeter using the standard Canadian rain guage, a cylindrical container 40 cm high and 11.3 cm in diameter. Snow is measured in centimeters at several points that appear representative of the immediate area and then averaged. These raw data
-are combined to one entry and added to the historical climate database with a generated climate id and the station's location and id. Each row also have month and year of the data measured.
+According to the glossary published by @meteorological_service_of_canada_past_2023, Each day, measurement of temperature, rain, snow, precipitation, and gust speed are recorded. The wind and gust speed is measured in km/h with anemometer dials at a standard height of 10 meters above the ground. Rain and precipitation are measured in millimeter using the standard Canadian rain guage, a cylindrical container 40 cm high and 11.3 cm in diameter. Snow is measured in centimeters at several points that appear representative of the immediate area and then averaged. These raw data are combined to one entry and added to the historical climate database with a generated climate id and the station's location and id. Each row also have month and year of the data measured.
 
 For climate research, including climate change studies, @environment_and_climate_change_canada_adjusted_2021 has developed the Adjusted and Homogenized Canadian Climate Data (AHCCD) dataset. This dataset undergoes rigorous quality control and homogenization processes to address non-climatic factors that can affect long-term data consistency, such as station relocations or changes in instrumentation. The AHCCD ensures that observed trends reflect actual climate changes rather than artificial shifts in the data. In the AHCCD dataset, the precipitation, rain, pressure, snow and wind speed are adjusted with models to account for missing data and other non-climate factors. The detailed adjustments and corrections are documented in @sec-methodology. For example, precipitation measurements, which are often underestimated, are adjusted to ensure accuracy, especially in regions like the Arctic [@environment_and_climate_change_canada_climate_2021-1]. In the AHCCD dataset, parameters measured are recorded with the units, date, station ids, location and unique identifiers. The AHCCD data maintains a one-to-one correspondence with the historical weather dataset by a matching station id system, ensuring that each entry in the AHCCD aligns directly with a specific observation in the historical dataset. 
+
+The limitations are documented in @sec-methodology.
 
 ## Raw Data
 
@@ -137,11 +131,146 @@ The variables in the two datasets contains the following:
 - Flags and Identifiers: Flags for data validity in both tables, such as precipitation flags, temperature flags, and identifiers like Climate ID or identifier.
 
 
-## Data Cleaning
+## Data Cleaning {#sec-datacleaning}
 
-### 
+The data cleaning process consists of two steps. First, we standardize and clean the column headers. Second, we merge the two datasets into a single combined dataset. The dataset used in this analysis combines information from two distinct sources: climate data (raw_data_climate) and historical weather data (raw_data_ahccd). The analysis spans data collected between 1959 and 2010 for training and testing purposes. 
+
+The cleaned dataset contains a range of weather variables providing detailed monthly observations. The `date` variable represents the observation month, standardized to the first day of each month. **`wind_speed`** (km/h) captures average monthly wind speeds, while **`total_precipitation`** (mm) measures the total monthly precipitation, including rain and snow. **`snow`** (mm) records total snowfall, and **`pressure_station`** (kPa) indicates atmospheric pressure at the observation station. **`max_temp`** (°C), **`min_temp`** (°C), and **`mean_temp`** (°C) represent the monthly averages of maximum, minimum, and overall temperatures, respectively. **`total_rain`** (mm) focuses solely on rainfall amounts, distinct from snowfall. **`gust_speed_km_h`** (km/h) records the monthly average of maximum gust speeds. Additionally, constructed variables include **`mean_temp_F`**, the mean temperature was converted to Fahrenheit using 
+$$
+(\text{mean\_temp} \times 1.8) + 32
+$$
+, and **`log_mean_temp`**, the log-transformed Fahrenheit temperature, was calculated as 
+$$
+\log(\text{mean\_temp\_F})
+$$
+.
+All column names were cleaned and standardized using `janitor` in @tidyverse to ensure consistency and readability. Dates were parsed into a unified format (`yyyy-mm-dd`) and aligned with monthly observations using the @lubridate package. The datasets were merged into a single combined dataset using the `date_time` variable as the common key. Finally, constructed variables, including `mean_temp_F` and `log_mean_temp`, were added to facilitate advanced modeling techniques.
+
+## Cleaned Data
+
+The top 6 rows of the cleaned data is displayed in @tbl-cleaned-data.
+
+```{r}
+#| label: tbl-cleaned-data
+#| tbl-cap: Sample of Cleaned Weather Data
+#| echo: false
+#| warning: false
+analysis_data |>
+  head(6) |>
+  mutate(log_mean_temp = round(log_mean_temp, 2)) |>
+  kable(
+    col.names = c("Date", "Wind Speed", "Total Precipitation", "Snow", "Pres.", "Max Temp", "Min Temp", "Mean Temp", "Rain", "Max Gust Speed", "Mean Temp in F", "Log of Mean Temp"),
+    booktabs = TRUE
+    ) 
+```
+
+The summary statistics of the combined dataset is displayed in @tbl-summary.
+
+## Characteristics in Cleaned Data
+### Skewness in Mean Temperature
+
+```{r}
+#| label: fig-hist-temp
+#| fig-cap: Mean Temp Shows More Normality and Less Skewness After Adjustment
+#| fig-subcap: ['Original Mean Temp has Skewness and Negative Numbers', 'Mean Temp in F Transformed the Value to All Positive', 'Log-Transformed Data Shows a More Symmetric and Less Skewed Distribution']
+#| echo: false
+#| warning: false
+#| layout-ncol: 2
+attach(analysis_data)
+
+hist(mean_temp, 
+     breaks = 100, 
+     main = "Distribution of Mean Temperature (°C)", 
+     xlab = "Mean Temperature (°C)", 
+     col = "red")
+
+# Histogram for Mean Temperature in Fahrenheit
+hist(mean_temp_F, 
+     breaks = 100, 
+     main = "Distribution of Mean Temperature (°F)", 
+     xlab = "Mean Temperature (°F)", 
+     col = "green")
+
+# Histogram for Log of Mean Temperature in Fahrenheit
+hist(log_mean_temp, 
+     breaks = 100, 
+     main = "Log-Transformed Mean Temperature (°F)", 
+     xlab = "Log of Mean Temperature (°F)", 
+     col = "blue")
+```
+
+@fig-hist-temp displays the histogram of the response variable Mean Temperature. @fig-hist-temp-1 shows the original mean temperature, which is skewed and includes negative values, making it unsuitable for direct modeling. To address this, We first transformed the data to Fahrenheit in @fig-hist-temp-2, shifting all values to be positive. However, to further normalize the distribution and reduce skewness, we applied a logarithmic transformation in @fig-hist-temp-3. The log transformation stabilizes variance, improves symmetry, and addresses non-linearity in the data, making it more appropriate for modelling. 
+
+### Total Snow Is Zero-Inflated
+
+@fig-boxplot-snow clearly shows significant zero inflation, with a large number of observations concentrated at zero and a few extreme outliers far above the majority of the data. This distribution suggests that the variable snow contains excessive structural zeros, likely representing instances where no snowfall occurred.
+
+<!-- Poor Model Fit: Traditional regression models assume a continuous or discrete distribution of values. The extreme concentration of zeros violates this assumption, leading to biased or inaccurate parameter estimates.
+Misleading Interpretability: The effect of snow on the response variable might be confounded by the disproportionate impact of the zeros, making the interpretation of results unreliable.
+Violated Assumptions: Many models assume homoscedasticity (constant variance) and normality of residuals. The zero inflation in snow increases heteroscedasticity and skews the residuals.
+My bayesian model depends on normal likelihood, so normality and constant variance matters. Gaussian likelihood in your model assumes continuous, symmetric data -->
 
 
+```{r}
+#| label: fig-boxplot-snow
+#| fig-cap: Total Snow shows Zero Inflation
+#| echo: false
+#| warning: false
+boxplot(analysis_data$snow,
+        main = "Boxplot of Total Snow",
+        ylab = "Snow (in cm)", 
+        col = "lightblue",
+        notch = TRUE)
+```
+
+### Maximum Temperature, Minimum Temperature and Mean Temperature Has Strong Linear Relationships
+
+```{r}
+#| label: fig-corr-temp
+#| fig-cap: Temperature Values Have High Correlations
+#| fig-subcap: ['High Correlations Between Max, Min and Mean Temperature', 'Other Predictors Does Not Have High Correlations', 'Linear Relationship Between Max and Mean Temperature', 'Linear Relationship Between Min and Mean Temperature']
+#| echo: false
+#| warning: false
+#| layout-ncol: 2
+selected_data_0 <- analysis_data[, c("wind_speed", "pressure_station", "snow",  "min_temp", "log_mean_temp", 'max_temp', "total_rain", "gust_speed_km_h")]
+colnames(selected_data_0) <- c("Wind Speed (km/h)", "Station Pressure (hPa)", "Snow (cm)", 
+                               "Min Temperature (°C)", "Log Mean Temperature (°F)", 
+                               "Max Temperature (°C)", "Total Rain (mm)", 
+                               "Gust Speed (km/h)")
+
+cor_matrix <- cor(selected_data_0)
+corrplot(cor_matrix, method = "color", type = "upper", 
+         tl.col = "black", tl.srt = 45, 
+         col = colorRampPalette(c("blue", "white", "red"))(200))
+
+selected_data_1 <- analysis_data[, c("wind_speed", "pressure_station", "snow", "log_mean_temp", "total_rain", "gust_speed_km_h")]
+colnames(selected_data_1) <- c("Wind Speed (km/h)", "Station Pressure (hPa)", "Snow (cm)", 
+                               "Log Mean Temperature (°F)", "Total Rain (mm)", 
+                               "Gust Speed (km/h)")
+
+cor_matrix <- cor(selected_data_1)
+corrplot(cor_matrix, method = "color", type = "upper", 
+         tl.col = "black", tl.srt = 45, 
+         col = colorRampPalette(c("blue", "white", "red"))(200))
+
+# Scatter plot with linear trendline for Max Temperature vs. Mean Temperature
+ggplot(analysis_data, aes(x = `max_temp`, y = `mean_temp`)) +
+  geom_point(color = "blue", alpha = 0.6) +   # Scatter plot
+  geom_smooth(method = "lm", se = FALSE, color = "red") +  # Add linear trendline
+  labs(title = "Correlation: Max Temperature vs. Mean Temperature",
+       x = "Max Temperature (°C)",
+       y = "Mean Temperature (°C)") +
+  theme_minimal()
+
+# Scatter plot with linear trendline for Min Temperature vs. Mean Temperature
+ggplot(analysis_data, aes(x = `min_temp`, y = `mean_temp`)) +
+  geom_point(color = "green", alpha = 0.6) +   # Scatter plot
+  geom_smooth(method = "lm", se = FALSE, color = "red") +  # Add linear trendline
+  labs(title = "Correlation: Min Temperature vs. Mean Temperature",
+       x = "Min Temperature (°C)",
+       y = "Mean Temperature (°C)") +
+  theme_minimal()
+```
 
 # Model
 
@@ -168,7 +297,7 @@ We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. We use
 
 ```{r}
 fitted_values <- fitted(m1)
-ggplot(data = analysis_data, aes(x = fitted_values, y = mean_temp_F)) +
+ggplot(data = train_data, aes(x = fitted_values, y = mean_temp_F)) +
   geom_point(color = "blue", alpha = 0.7) +
   geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed", size = 1) +
   labs(x = "Predicted Temperature", y = "Actual Temperature", title = "Actual Temperature vs. Predicted Values")
@@ -177,7 +306,7 @@ ggplot(data = analysis_data, aes(x = fitted_values, y = mean_temp_F)) +
 
 ```{r}
 fitted_values <- fitted(m2)
-ggplot(data = analysis_data, aes(x = fitted_values, y = mean_temp_F)) +
+ggplot(data = train_data, aes(x = fitted_values, y = mean_temp_F)) +
   geom_point(color = "blue", alpha = 0.7) +
   geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed", size = 1) +
   labs(x = "Predicted Temperature", y = "Actual Temperature", title = "Actual Temperature vs. Predicted Values")
@@ -215,11 +344,47 @@ Weaknesses and next steps should also be included.
 \newpage
 
 \appendix
-
-# Appendix {#sec-appendix}
+# Appendix {-}
 
 # License
 Contains information licensed under the [Open Government Licence – Canada](https://open.canada.ca/en/open-government-licence-canada)
+
+# Summary Statistic of cleaned dataset
+\newpage
+```{r}
+#| label: tbl-summary
+#| tbl-cap: Summary Statistics of Raw Climate Data 
+#| echo: false
+#| warning: false
+# Generate the table
+analysis_data |>
+  select(wind_speed, total_precipitation, snow, pressure_station,
+  max_temp, min_temp) |>
+  summary() |>
+  kable(
+    col.names = c(
+      "Wind Speed", "Total Precipitation", "Snow", "Pres.", 
+      "Max Temp", "Min Temp"
+    ),
+    booktabs = TRUE,
+    align = "c",  # Center-align all columns
+    format = "latex"  # Ensure LaTeX output
+  )
+analysis_data |>
+  select(mean_temp, total_rain, gust_speed_km_h,
+  mean_temp_F, log_mean_temp) |>
+  summary() |>
+  kable(
+    col.names = c(
+      "Mean Temp", "Rain", 
+      "Max Gust Speed", "Mean Temp in F", "Log of Mean Temp"
+    ),
+    booktabs = TRUE,
+    align = "c",  # Center-align all columns
+    format = "latex"  # Ensure LaTeX output
+  )
+```
+\newpage
 
 # Methodology of ECCC  {#sec-methodology}
 

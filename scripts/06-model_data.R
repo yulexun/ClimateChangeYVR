@@ -26,6 +26,8 @@ set.seed(123)
 train_indices <- sample(1:nrow(analysis_data), size = 0.7 * nrow(analysis_data))
 train_data <- analysis_data[train_indices, ]
 test_data <- analysis_data[-train_indices, ]
+write_parquet(train_data, "data/02-analysis_data/train_data.parquet")
+write_parquet(test_data, "data/02-analysis_data/test_data.parquet")
 
 # MLR
 
