@@ -166,7 +166,7 @@ analysis_data |>
 
 The summary statistics of the combined dataset is displayed in @tbl-summary.
 
-## Characteristics in Cleaned Data
+## Characteristics of Cleaned Data
 ### Skewness in Mean Temperature
 
 ```{r}
@@ -217,13 +217,17 @@ My bayesian model depends on normal likelihood, so normality and constant varian
 #| echo: false
 #| warning: false
 boxplot(analysis_data$snow,
+        horizontal = TRUE,
         main = "Boxplot of Total Snow",
-        ylab = "Snow (in cm)", 
+        ylab = "Total Snow",
+        xlab = "Snow (in cm)", 
         col = "lightblue",
         notch = TRUE)
 ```
 
 ### Maximum Temperature, Minimum Temperature and Mean Temperature Has Strong Linear Relationships
+
+@fig-corr-temp-1 highlights strong relationships between temperature variables, showing strong positive correlations between Max Temperature (°C), Min Temperature (°C), and Mean Temperature (°C). Scatter plots in @fig-corr-temp-3 and @fig-corr-temp-4 show near-perfect linear relationships, indicating that Max Temperature (°C) and Min Temperature (°C) are highly collinear with Mean Temperature (°C). In contrast, other predictors shown in @fig-corr-temp-2, such as Wind Speed (km/h), Station Pressure (hPa), and Total Rain (mm), show weaker correlations with the temperature variables and with each other, suggesting they contribute unique and independent information to the model.
 
 ```{r}
 #| label: fig-corr-temp
