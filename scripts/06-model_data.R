@@ -39,7 +39,6 @@ m4 <- lm(mean_temp_F ~ wind_speed +
   pressure_station + total_precipitation + gust_speed_km_h, data = train_data)
 summary(m4)
 
-AIC(m3)
 AIC(m4)
 # Bayesian Model
 
@@ -65,28 +64,17 @@ plot(residuals(bayesian_model_log))
 
 # GLM
 
-glm_model_log_1 <- glm(
-  log_mean_temp ~ wind_speed + pressure_station +
-    total_precipitation + gust_speed_km_h,
-  data = train_data,
-  family = gaussian()
-)
+glm_model_log <- lm(log_mean_temp ~ log_wind_speed + log_pressure +
+  total_precipitation_boxcox + log_gust_speed, data = train_data)
 
-glm_model_log <- glm(
-  log_mean_temp ~ log_wind_speed + log_pressure +
-    total_precipitation_boxcox + log_gust_speed,
-  data = train_data,
-  family = gaussian()
-)
 # Adding polynomial transformations to the model
-glm_model_poly <- glm(
+glm_model_poly <- lm(
   log_mean_temp ~ 
     poly(log_wind_speed, 2) +                   # Quadratic polynomial for wind_speed
     poly(log_pressure, 2) +            # Quadratic polynomial for pressure_station
     poly(total_precipitation_boxcox, 2) +  # Quadratic polynomial for total_precipitation_boxcox
     poly(log_gust_speed, 2),               # Quadratic polynomial for log_gust_speed
-  data = train_data,
-  family = gaussian()
+  data = train_data
 )
 
 # Summary of the model

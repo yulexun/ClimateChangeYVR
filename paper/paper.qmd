@@ -24,7 +24,7 @@ library(corrplot)
 library(knitr)
 library(kableExtra)
 library(car)
-
+library(modelsummary)
 
 raw_data_climate <- read_csv(here("data/01-raw_data/climateyvr.csv"))
 raw_data_ahccd <- read_csv(here("data/01-raw_data/ahccdyvr.csv"))
@@ -94,6 +94,12 @@ leverage <- hatvalues(glm_log)
 plot(leverage, main = "Leverage Check", type = "h")
 abline(h = 2 * mean(leverage), col = "red", lty = 2)
 # Points above the red line have high leverage.
+
+
+AIC(glm_model)
+AIC(glm_log)
+BIC(glm_model)
+BIC(glm_log)
 
 ```
 
@@ -202,7 +208,7 @@ Additionally, a Box-Cox transformation was applied to the `total_precipitation` 
 
 All column names were cleaned and standardized using `janitor` in tidyverse [@tidyverse] to ensure consistency and readability. Dates were parsed into a unified format (`yyyy-mm-dd`) and aligned with monthly observations using the lubridate package [@lubridate]. The datasets were merged into a single combined dataset using the `date_time` variable as the common key. Finally, constructed variables, including `mean_temp_F`, `total_precipitation_boxcox`, `log_gust_speed`, `log_mean_temp`, `log_wind_speed` and `log_pressure` were added to the cleaned data. 
 
-## Cleaned Data
+### Cleaned Data
 
 The top 6 rows of the cleaned data is displayed in @tbl-cleaned-data.
 
@@ -321,9 +327,9 @@ ggplot(analysis_data, aes(x = snow)) +
 
 ```
 
-### Variables with Strong Linear Relationships
+### Variables with Strong Linear Relationships {#sec-multic-all}
 
-#### Maximum Temperature, Minimum Temperature and Mean Temperature
+#### Maximum Temperature, Minimum Temperature and Mean Temperature {#sec-multic-temp}
 
 @fig-corr-temp-1 highlights strong relationships between temperature variables, showing strong positive correlations between Max Temperature (°C), Min Temperature (°C), and Mean Temperature (°C). Scatter plots in @fig-corr-temp-3 and @fig-corr-temp-4 show near-perfect linear relationships, indicating that Max Temperature (°C) and Min Temperature (°C) are highly collinear with Mean Temperature (°C). In contrast, other predictors shown in @fig-corr-temp-2, such as Wind Speed (km/h), Station Pressure (hPa), and Total Rain (mm), show weaker correlations with the temperature variables and with each other, suggesting they contribute unique and independent information to the model.
 
@@ -397,7 +403,7 @@ ggplot(analysis_data, aes(x = `total_precipitation`, y = `total_rain`)) +
 
 The goal of our modelling strategy is to find a model that can predict temperature changes with other weather data.
 
-We build a bayesian model, a general linear model and a general linear model with a 2 degrees of polynomial transformation. We determine the best model is the linear model with polynomial transformation. The detailed steps are recorded in @sec-model-select. 
+We build a bayesian model, a general linear model and a general linear model with a 2 degrees of polynomial transformation. We determine the best model is the linear model with polynomial transformation. The detailed steps are recorded in @sec-model-detail. 
 
 ## Model set-up
 
@@ -415,15 +421,6 @@ y_i|\mu_i, \sigma &\sim \mbox{Normal}(\mu_i, \sigma) \\
 We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. We use the default priors from `rstanarm`.
 
 ## MLR Model
-
-```{r}
-fitted_values <- fitted(m1)
-ggplot(data = train_data, aes(x = fitted_values, y = mean_temp_F)) +
-  geom_point(color = "blue", alpha = 0.7) +
-  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed", size = 1) +
-  labs(x = "Predicted Temperature", y = "Actual Temperature", title = "Actual Temperature vs. Predicted Values")
-
-```
 
 ```{r}
 fitted_values <- fitted(m4)
@@ -469,6 +466,90 @@ Weaknesses and next steps should also be included.
 
 # License
 Contains information licensed under the [Open Government Licence – Canada](https://open.canada.ca/en/open-government-licence-canada)
+
+# Model Details {#sec-model-detail}
+## MLR Model With Every Predictor in Cleaned Data
+
+The first model predicts mean temperature ($\text{mean\_temp\_F}$) based on multiple predictors: wind speed ($\text{wind\_speed}$), total precipitation ($\text{total\_precipitation}$), snow ($\text{snow}$), station pressure ($\text{pressure\_station}$), maximum temperature ($\text{max\_temp}$), minimum temperature ($\text{min\_temp}$), total rainfall ($\text{total\_rain}$), and gust speed ($\text{gust\_speed\_km\_h}$).
+
+The fitted model is:
+
+\begin{align}
+\text{mean\_temp\_F} &= \beta_0 + \beta_1 \cdot \text{wind\_speed} + \beta_2 \cdot \text{total\_precipitation} + \beta_3 \cdot \text{snow} \\
+&+ \beta_4 \cdot \text{pressure\_station} + \beta_5 \cdot \text{max\_temp} + \beta_6 \cdot \text{min\_temp} \\
+&+ \beta_7 \cdot \text{total\_rain} + \beta_8 \cdot \text{gust\_speed\_km\_h} + \epsilon
+\end{align}
+
+- $\beta_0$: Intercept
+- $\beta_1, \beta_2, \dots, \beta_8$: Coefficients representing the change in $\text{mean\_temp\_F}$ for a one-unit increase in the respective predictor, holding other variables constant.
+- $\epsilon$: Residual error, assumed to be normally distributed with mean 0.
+
+This model has the following summary statistics in @tbl-summary-model.
+
+```{r}
+#| label: tbl-summary-model
+#| tbl-cap: Summary Statistics Shows a Large R2 in Model 1, Potential Variability in Model 2, Model L fits performs than Model 2
+#| echo: false
+#| warning: false
+modelsummary(
+  list("Model 1" = m1, "Model 2" = m4, "Model L" = glm_log),
+  output = "latex"
+)
+```
+
+The model's coefficients suggest an issue of multicollinearity, particularly due to the inclusion of highly correlated predictors such as maximum temperature, minimum temperature, and mean temperature, as discussed in @sec-multic-temp. Multicollinearity inflates the standard errors of the coefficients, making it difficult to determine the individual contribution of these variables to the response variable. Despite the model showing a perfect R2 and adjusted R2 , these metrics are misleading because the presence of highly correlated predictors often leads to overfitting. This is evident from the small coefficient magnitudes and nearly zero p-values, which do not reflect the true independent influence of the predictors. Such multicollinearity can undermine the model's interpretability and generalizability to new data.
+
+
+## MLR Model Without Multicollinearity Variables
+
+We then build our second model. 
+
+This model predicts mean temperature (mean_temp_F) based on a subset of predictors: wind speed (wind_speed), station pressure (pressure_station), total precipitation (total_precipitation), and gust speed (gust_speed_km_h).
+
+
+\begin{align}
+\text{mean\_temp\_F} &= \beta_0 + \beta_1 \cdot \text{wind\_speed} + \beta_2 \cdot \text{pressure\_station} \\
+&+ \beta_3 \cdot \text{total\_precipitation} + \beta_4 \cdot \text{gust\_speed\_km\_h} + \epsilon
+\end{align}
+
+
+- $\beta_0$: Intercept.
+- $\beta_1, \beta_2, \beta_3, \beta_4$: Coefficients representing the change in $\text{mean\_temp\_F}$ for a one-unit increase in each respective predictor, holding others constant.
+- $\epsilon$: Residual error, assumed to be normally distributed with mean 0.
+
+This simplified model excludes highly correlated predictors, such as maximum and minimum temperatures, to reduce multicollinearity and improve interpretability.
+
+In the summary of our second model as shown in @tbl-summary-model, all predictors have relatively small coefficients, suggesting incremental effects on the response variable. The relatively large standard errors of some coefficients, such as the intercept, indicate potential variability or noise in the data. For instalce, from @fig-hist-temp and @fig-hist-all, we observe skewness and non-normal distribution in both predictor and the response. According to @fig-plot-m4p-1, The model does not sufficiently explain the variability in the response variable, due to non-linearity or unaddressed skewness in the data. This plot suggests that the model's assumptions of linearity and homoscedasticity (constant variance of residuals) are violated.
+
+```{r}
+#| label: fig-plot-m4p
+#| fig-cap: Residual vs Fitted Plot of Model 2 and L
+#| fig-subcap: ['In Model 2, The residuals are not evenly distributed', 'In Model L, The residual is more evenly distributed']
+#| echo: false
+#| warning: false
+#| layout-ncol: 2
+plot(m4, which = 1)
+plot(glm_log, which = 1)
+```
+
+## MLR Model with transformed variables
+In our third model L, we use log and Box-Cox transformation to ensure linearity and homoscedasticity in all predictors and the response. The detailed steps are documented in @sec-multic-all. This linear model predicts the log-transformed mean temperature (`log_mean_temp`) based on log-transformed wind speed (`log_wind_speed`), log-transformed pressure (`log_pressure`), Box-Cox-transformed total precipitation (`total_precipitation_boxcox`), and log-transformed gust speed (`log_gust_speed`).
+
+We build our Model L as the following: 
+
+\begin{align}
+\text{log\_mean\_temp} &= \beta_0 + \beta_1 \cdot \text{log\_wind\_speed} + \beta_2 \cdot \text{log\_pressure} \\
+&+ \beta_3 \cdot \text{total\_precipitation\_boxcox} + \beta_4 \cdot \text{log\_gust\_speed} + \epsilon
+\end{align}
+
+- $\beta_0$: Intercept.
+- $\beta_1, \beta_2, \beta_3, \beta_4$: Coefficients representing the change in `log_mean_temp` for a one-unit increase in each predictor, holding other variables constant.
+- $\epsilon$: Residual error, assumed to follow a Gaussian (normal) distribution.
+
+The inclusion of the Box-Cox-transformed total precipitation further refines the model by accommodating non-linearity in precipitation data. The Gaussian family ensures that the residuals of the response variable follow a normal distribution after the transformations. As shown in @fig-plot-m4p-2, this model reduces heteroscedasticity, minimizes non-linear patterns in residuals, and improves overall interpretability and fit. Each coefficient indicates the multiplicative effect of a one-unit change in the respective predictor on the mean temperature after applying the logarithmic transformations. This model fits better than Model 2, as indicated in @tbl-summary-model, as the R2 and adjusted R2 are higher, AIC, BIC are smaller.
+
+## Polynomial Linear Model
+The residual plot in @fig-plot-m4p-2 shows a non-linear pattern, as indicated by the curved trend in the residuals. This suggests that the relationship between the predictors and the response variable is not fully captured by a linear model. Adding polynomial terms could help address this non-linearity by allowing the model to fit curved relationships.
 
 # Summary Statistic of cleaned dataset
 \newpage
@@ -516,7 +597,9 @@ analysis_data |>
     align = "c",  # Center-align all columns
     format = "latex"  # Ensure LaTeX output
   )
+
 ```
+
 \newpage
 
 ```{r}
