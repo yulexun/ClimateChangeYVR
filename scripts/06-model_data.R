@@ -35,41 +35,19 @@ m1 <- lm(mean_temp_F ~ wind_speed + total_precipitation + snow +
   pressure_station + max_temp + min_temp + total_rain + gust_speed_km_h, data = train_data)
 summary(m1)
 
-m2 <- lm(mean_temp_F ~ wind_speed + total_precipitation + snow +
-  pressure_station + total_rain + gust_speed_km_h, data = train_data)
-summary(m2)
-
-m3 <- lm(mean_temp_F ~ wind_speed + total_precipitation +
-  pressure_station + total_rain + gust_speed_km_h, data = train_data)
-summary(m3)
-
 m4 <- lm(mean_temp_F ~ wind_speed +
-  pressure_station + total_rain + gust_speed_km_h, data = train_data)
+  pressure_station + total_precipitation + gust_speed_km_h, data = train_data)
 summary(m4)
 
 AIC(m3)
 AIC(m4)
 # Bayesian Model
-hist(train_data$log_mean_temp)
-
-
-bayesian_model_log_1 <- brm(
-  formula = log_mean_temp ~ wind_speed + pressure_station +
-    total_precipitation + gust_speed_km_h,
-  data = train_data,
-  family = lognormal(),
-  prior = c(
-    prior(normal(0, 10), class = "b"), # Priors for coefficients
-    prior(normal(0, 10), class = "Intercept") # Prior for the intercept
-  ),
-  chains = 4, iter = 2000, cores = 4
-)
 
 bayesian_model_log <- brm(
   formula = log_mean_temp ~ wind_speed + pressure_station +
     total_precipitation_boxcox + log_gust_speed,
   data = train_data,
-  family = lognormal(),
+  family = gaussian(),
   prior = c(
     prior(normal(0, 10), class = "b"), # Priors for coefficients
     prior(normal(0, 10), class = "Intercept") # Prior for the intercept
@@ -86,15 +64,6 @@ pp_check(bayesian_model_log)
 plot(residuals(bayesian_model_log))
 
 # GLM
-glm_model <- glm(
-  mean_temp_F ~ wind_speed + pressure_station +
-    total_precipitation + gust_speed_km_h,
-  data = train_data,
-  family = gaussian()
-)
-
-summary(glm_model)
-modelsummary(glm_model)
 
 glm_model_log_1 <- glm(
   log_mean_temp ~ wind_speed + pressure_station +
@@ -104,7 +73,7 @@ glm_model_log_1 <- glm(
 )
 
 glm_model_log <- glm(
-  log_mean_temp ~ wind_speed + pressure_station +
+  log_mean_temp ~ log_wind_speed + log_pressure +
     total_precipitation_boxcox + log_gust_speed,
   data = train_data,
   family = gaussian()
@@ -112,8 +81,8 @@ glm_model_log <- glm(
 # Adding polynomial transformations to the model
 glm_model_poly <- glm(
   log_mean_temp ~ 
-    poly(wind_speed, 2) +                   # Quadratic polynomial for wind_speed
-    poly(pressure_station, 2) +            # Quadratic polynomial for pressure_station
+    poly(log_wind_speed, 2) +                   # Quadratic polynomial for wind_speed
+    poly(log_pressure, 2) +            # Quadratic polynomial for pressure_station
     poly(total_precipitation_boxcox, 2) +  # Quadratic polynomial for total_precipitation_boxcox
     poly(log_gust_speed, 2),               # Quadratic polynomial for log_gust_speed
   data = train_data,
@@ -130,7 +99,7 @@ modelsummary(glm_model_log)
 #### Validation Testing ####
 
 # GLM
-glm_model <- glm_model_log
+glm_model <- glm_model_poly
 
 # BRM
 brm_model <- bayesian_model_log
@@ -168,30 +137,6 @@ print(c(GLM_MAE = mae_glm, BRM_MAE = mae_brm))
 # Visualize actual vs predicted
 library(ggplot2)
 
-# GLM vs Actual
-ggplot(test_data, aes(x = actual_mean_temp)) +
-  geom_point(aes(y = glm_predicted, color = "GLM Predictions")) +
-  geom_point(aes(y = actual_mean_temp, color = "Actual Values")) +
-  labs(
-    title = "GLM Model: Actual vs Predicted Mean Temperature",
-    x = "Actual Mean Temperature (°C)",
-    y = "Predicted Mean Temperature (°C)",
-    color = "Legend"
-  ) +
-  theme_minimal()
-
-# BRM vs Actual
-ggplot(test_data, aes(x = actual_mean_temp)) +
-  geom_point(aes(y = brm_predicted, color = "BRM Predictions")) +
-  geom_point(aes(y = actual_mean_temp, color = "Actual Values")) +
-  labs(
-    title = "Bayesian Model: Actual vs Predicted Mean Temperature",
-    x = "Actual Mean Temperature (°C)",
-    y = "Predicted Mean Temperature (°C)",
-    color = "Legend"
-  ) +
-  theme_minimal()
-
 # Combined Visualization for GLM and BRM
 ggplot(test_data, aes(x = actual_mean_temp)) +
   geom_point(aes(y = glm_predicted, color = "GLM Predictions")) +
@@ -227,3 +172,11 @@ plot(fitted_values, residuals,
      main = "Residuals vs Fitted Values",
      pch = 19, col = "blue")
 abline(h = 0, col = "red")  # Add horizontal line at zero
+
+
+#### Save Model ####
+saveRDS(glm_model_poly, "models/glm_poly.rds")
+saveRDS(glm_model_log, "models/glm_log.rds")
+saveRDS(bayesian_model_log, "models/brm.rds")
+saveRDS(m1, "models/m1.rds")
+saveRDS(m4, "models/m4.rds")

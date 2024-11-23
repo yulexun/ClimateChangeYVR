@@ -23,17 +23,19 @@ library(arrow)
 library(corrplot)
 library(knitr)
 library(kableExtra)
+library(car)
+
 
 raw_data_climate <- read_csv(here("data/01-raw_data/climateyvr.csv"))
 raw_data_ahccd <- read_csv(here("data/01-raw_data/ahccdyvr.csv"))
 analysis_data <- read_parquet(here("data/02-analysis_data/cleaned_data.parquet"))
 train_data <- read_parquet(here("data/02-analysis_data/train_data.parquet"))
 test_data <- read_parquet(here("data/02-analysis_data/test_data.parquet"))
-m1 <- readRDS(here("models/mlr_1.rds"))
-m2 <- readRDS(here("models/mlr_2.rds"))
-glm_nolog <- readRDS(here("models/glm_nolog.rds"))
-glm <- readRDS(here("models/glm_model.rds"))
-brm <- readRDS(here("models/brm_model.rds"))
+m1 <- readRDS(here("models/m1.rds"))
+m4 <- readRDS(here("models/m4.rds"))
+glm <- readRDS(here("models/glm_poly.rds"))
+brm <- readRDS(here("models/brm.rds"))
+glm_log <- readRDS(here("models/glm_log.rds"))
 ```
 
 ```{r}
@@ -43,24 +45,33 @@ glm_model <- glm
 
 # 1. Linearity: Residuals vs Fitted Plot
 plot(glm_model, which = 1, main = "Linearity Check: Residuals vs Fitted")
+plot(glm_log, which = 1, main = "Linearity Check: Residuals vs Fitted")
+
 # Look for a random scatter of points. Patterns indicate non-linearity.
 
 # 2. Homoscedasticity: Scale-Location Plot
 plot(glm_model, which = 3, main = "Homoscedasticity Check: Scale-Location")
+plot(glm_log, which = 3, main = "Homoscedasticity Check: Scale-Location")
 # Points should be evenly spread. A funnel shape indicates heteroscedasticity.
 
 # 3. Normality of Residuals: Q-Q Plot
 plot(glm_model, which = 2, main = "Normality Check: Q-Q Plot")
+plot(glm_log, which = 2, main = "Normality Check: Q-Q Plot")
+
 # Points should lie approximately along the diagonal line.
 
 # 4. Residual Histogram: Another Normality Check
 residuals <- residuals(glm_model)
 hist(residuals, main = "Histogram of Residuals", xlab = "Residuals")
+residuals <- residuals(glm_log)
+hist(residuals, main = "Histogram of Residuals", xlab = "Residuals")
+
 # Check for symmetry. A skewed histogram suggests non-normal residuals.
 
 # 5. Multicollinearity: Variance Inflation Factor (VIF)
-library(car)
 vif_values <- vif(glm_model)
+print(vif_values)
+vif_values <- vif(glm_log)
 print(vif_values)
 # VIF > 5 indicates high multicollinearity. Consider removing highly correlated predictors.
 
@@ -68,18 +79,21 @@ print(vif_values)
 cooksd <- cooks.distance(glm_model)
 plot(cooksd, main = "Cook's Distance", type = "h")
 abline(h = 4 / nrow(model.frame(glm_model)), col = "red", lty = 2)
+
+cooksd <- cooks.distance(glm_log)
+plot(cooksd, main = "Cook's Distance", type = "h")
+abline(h = 4 / nrow(model.frame(glm_log)), col = "red", lty = 2)
 # Points above the red line are highly influential.
 
 # 7. Leverage: Identify High Leverage Points
 leverage <- hatvalues(glm_model)
 plot(leverage, main = "Leverage Check", type = "h")
 abline(h = 2 * mean(leverage), col = "red", lty = 2)
-# Points above the red line have high leverage.
 
-# 8. Correlation Between Predictors
-cor_matrix <- cor(model.frame(glm_model)[, -1]) # Exclude response variable
-print(round(cor_matrix, 2))
-# Check for highly correlated predictors (e.g., correlation > 0.8 or < -0.8).
+leverage <- hatvalues(glm_log)
+plot(leverage, main = "Leverage Check", type = "h")
+abline(h = 2 * mean(leverage), col = "red", lty = 2)
+# Points above the red line have high leverage.
 
 ```
 
@@ -184,9 +198,9 @@ $$
 \log(\text{mean\_temp\_F})
 $$
 . 
-Additionally, a Box-Cox transformation was applied to the `total_precipitation` variable to address skewness and stabilize variance, resulting in the new variable `total_precipitation_boxcox`. For `gust_speed_km_h`, a log transformation was used to stabilize variance and reduce right-skewness in its distribution, creating the new variable `log_gust_speed`. 
+Additionally, a Box-Cox transformation was applied to the `total_precipitation` variable to address skewness and stabilize variance, resulting in the new variable `total_precipitation_boxcox`. For `gust_speed_km_h`, `wind_speed` and `pressure_station`, a log transformation was used to stabilize variance and reduce right-skewness in their distribution, creating the new variable `log_gust_speed`, `log_wind_speed` and `log_pressure`. 
 
-All column names were cleaned and standardized using `janitor` in tidyverse [@tidyverse] to ensure consistency and readability. Dates were parsed into a unified format (`yyyy-mm-dd`) and aligned with monthly observations using the lubridate package [@lubridate]. The datasets were merged into a single combined dataset using the `date_time` variable as the common key. Finally, constructed variables, including `mean_temp_F`, `total_precipitation_boxcox`, `log_gust_speed` and `log_mean_temp`, were added to the cleaned data. 
+All column names were cleaned and standardized using `janitor` in tidyverse [@tidyverse] to ensure consistency and readability. Dates were parsed into a unified format (`yyyy-mm-dd`) and aligned with monthly observations using the lubridate package [@lubridate]. The datasets were merged into a single combined dataset using the `date_time` variable as the common key. Finally, constructed variables, including `mean_temp_F`, `total_precipitation_boxcox`, `log_gust_speed`, `log_mean_temp`, `log_wind_speed` and `log_pressure` were added to the cleaned data. 
 
 ## Cleaned Data
 
@@ -195,6 +209,7 @@ The top 6 rows of the cleaned data is displayed in @tbl-cleaned-data.
 ```{r}
 #| label: tbl-cleaned-data
 #| tbl-cap: Sample of Cleaned Weather Data
+#| tbl-subcap: ['Sample of Cleaned Weather Data', 'Gust Speed and Transformed Data']
 #| echo: false
 #| warning: false
 analysis_data |>
@@ -207,25 +222,36 @@ analysis_data |>
   kable(
     col.names = c("Wind Speed", "Total Precip.", "Snow", "Pressure", 
                   "Max Temp", "Min Temp", "Mean Temp", "Rain"),
-    align = "c",  # Center-align all columns
-    format = "latex"  # Ensure LaTeX output
+    format = "latex", booktabs = TRUE,
+  )
+
+analysis_data |>
+  head(6) |>
+  select(log_gust_speed, log_wind_speed, log_pressure
+  ) |>
+  mutate(across(everything(), ~ round(., 2))) |>
+  kable(
+    col.names = c("Log of Gust Speed", "Log of Wind Speed", "Log of Pressire"),
+    format = "latex", booktabs = TRUE,
   )
 analysis_data |>
   head(6) |>
   select(
-    gust_speed_km_h, log_mean_temp, total_precipitation_boxcox, log_gust_speed
+    gust_speed_km_h, log_mean_temp, total_precipitation_boxcox
   ) |>
   mutate(across(everything(), ~ round(., 2))) |>
   kable(
-    col.names = c("Gust Speed", "Log of Mean Temp", "Box-Cox Total Precip.", "Log of Gust Speed"),
-    align = "c",  # Center-align all columns
-    format = "latex"  # Ensure LaTeX output
+    col.names = c("Gust Speed", "Log of Mean Temp", "Box-Cox Total Precip."),
+    format = "latex", booktabs = TRUE,
   )
 ```
 
 The summary statistics of the combined dataset is displayed in @tbl-summary.
 
 ## Characteristics of Cleaned Data
+
+All of the variables in the dataset are numeric, the histograms are plotted in @fig-hist-temp and @fig-hist-all. The following section explains the characteristics of these variables.
+
 ### Skewness in Mean Temperature, Total Precipitation and Gust Speed
 
 ```{r}
@@ -260,7 +286,7 @@ hist(log_mean_temp,
 
 @fig-hist-temp displays the histogram of the response variable Mean Temperature. @fig-hist-temp-1 shows the original mean temperature, which is skewed and includes negative values, making it unsuitable for direct modeling. To address this, We first transformed the data to Fahrenheit in @fig-hist-temp-2, shifting all values to be positive. However, to further normalize the distribution and reduce skewness, we applied a logarithmic transformation in @fig-hist-temp-3. The log transformation stabilizes variance, improves symmetry, and addresses non-linearity in the data, making it more appropriate for modelling. 
 
-In @fig-hist-all, Transformations are also applied to Total Precipitation and Gust Speed. Total Precipitation has a strong right skew, with most values low and a few extreme high values. A logarithmic transformation is used to compress the large values, reducing skewness and making the distribution more symmetric. For Gust Speed, a Box-Cox transformation is applied to adjust its moderate skewness. This transformation reshaped the data to better approximate a normal distribution. These adjustments improve the suitability of these variables for statistical analyses that assume normality.
+In @fig-hist-all, Transformations are also applied to Wind Speed, Pressure, Total Precipitation and Gust Speed. Total Precipitation has a strong right skew, with most values low and a few extreme high values. We apply log transformation to predictors including wind speed, pressure and precipitation. For Gust Speed, a Box-Cox transformation is applied to adjust its moderate skewness. This transformation reshaped the data to better approximate a normal distribution. These adjustments improve the suitability of these variables for statistical analyses that assume normality. 
 
 
 ### Total Snow Is Zero-Inflated
@@ -276,8 +302,10 @@ My bayesian model depends on normal likelihood, so normality and constant varian
 ```{r}
 #| label: fig-boxplot-snow
 #| fig-cap: Total Snow shows Zero Inflation
+#| fig-subcap: ['A Large Proportion of Observations With No Snowfall', 'Prevalence of Zero Values and a Skewed Pattern in the Non-zero Snowfall Measurements']
 #| echo: false
 #| warning: false
+#| layout-ncol: 2
 boxplot(analysis_data$snow,
         horizontal = TRUE,
         main = "Boxplot of Total Snow",
@@ -285,9 +313,15 @@ boxplot(analysis_data$snow,
         xlab = "Snow (in cm)", 
         col = "lightblue",
         notch = TRUE)
+
+ggplot(analysis_data, aes(x = snow)) +
+  geom_histogram(fill = "red", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Snow", x = "Snow (cm)", y = "Frequency") +
+  theme_minimal()
+
 ```
 
-### Some Variables Has Strong Linear Relationships
+### Variables with Strong Linear Relationships
 
 #### Maximum Temperature, Minimum Temperature and Mean Temperature
 
@@ -361,9 +395,9 @@ ggplot(analysis_data, aes(x = `total_precipitation`, y = `total_rain`)) +
 
 # Model
 
-The goal of our modelling strategy is twofold. Firstly,...
+The goal of our modelling strategy is to find a model that can predict temperature changes with other weather data.
 
-Here we briefly describe the Bayesian analysis model used to investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
+We build a bayesian model, a general linear model and a general linear model with a 2 degrees of polynomial transformation. We determine the best model is the linear model with polynomial transformation. The detailed steps are recorded in @sec-model-select. 
 
 ## Model set-up
 
@@ -392,7 +426,7 @@ ggplot(data = train_data, aes(x = fitted_values, y = mean_temp_F)) +
 ```
 
 ```{r}
-fitted_values <- fitted(m2)
+fitted_values <- fitted(m4)
 ggplot(data = train_data, aes(x = fitted_values, y = mean_temp_F)) +
   geom_point(color = "blue", alpha = 0.7) +
   geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed", size = 1) +
@@ -471,11 +505,12 @@ analysis_data |>
     format = "latex"  # Ensure LaTeX output
   )
 analysis_data |>
-  select(total_precipitation_boxcox, log_gust_speed) |>
+  select(total_precipitation_boxcox, log_gust_speed, log_wind_speed, log_pressure) |>
   summary() |>
   kable(
     col.names = c(
-      "Box Cox of Precipitation", "Log of Gust Speed"
+      "Box Cox of Precipitation", "Log of Gust Speed", "Log of Wind Speed",
+      "Log of Pressure"
     ),
     booktabs = TRUE,
     align = "c",  # Center-align all columns
@@ -487,10 +522,10 @@ analysis_data |>
 ```{r}
 #| label: fig-hist-all
 #| fig-cap: Other Variables Show Normal Distribution
-#| fig-subcap: ['Wind Speed Shows Symmetric Distribution', 'Total Precipitation Shows Normal Distribution but Skewed Towards Low Values', 'Pressure Station Has a Nearly Normal Distribution', 'Gust Speed Shows Normal Distribution and Moderate Skewness', 'Box-Cox Transformed Gust Speed shows Reduces Skewness', 'Log Transformed Gust Speed shows Reduces Skewness']
+#| fig-subcap: ['Wind Speed Shows Symmetric Distribution', 'Total Precipitation Shows Normal Distribution but Skewed Towards Low Values', 'Pressure Station Has a Nearly Normal Distribution', 'Gust Speed Shows Normal Distribution and Moderate Skewness', 'Box-Cox Transformed Precipitation shows Reduces Skewness', 'Log Transformed Gust Speed shows Reduces Skewness', 'Log Transformed Pressure shows Reduces Skewness', 'Log Transformed Wind Speed shows Reduces Skewness']
 #| echo: false
 #| warning: false
-#| layout-ncol: 2
+#| layout-ncol: 3
 
 df <- analysis_data
 
@@ -528,13 +563,23 @@ ggplot(df, aes(x = log_gust_speed)) +
   labs(title = "Histogram of Log of Gust Speed", x = "Gust Speed (km/h)", y = "Frequency") +
   theme_minimal()
 
+# Plot histogram for log_pressure
+ggplot(df, aes(x = log_pressure)) +
+  geom_histogram(fill = "black", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Log of Pressure Station", x = "Pressure (hPa)", y = "Frequency") +
+  theme_minimal()
+
+# Plot histogram for wind_speed
+ggplot(df, aes(x = log_wind_speed)) +
+  geom_histogram(fill = "blue", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Log of Wind Speed", x = "Wind Speed (km/h)", y = "Frequency") +
+  theme_minimal()
 
 ```
 
-```{r}
-# Fit a model
+# Additional Model Detail {#sec-model-select}
 
-```
+
 
 # Methodology of ECCC {#sec-methodology}
 

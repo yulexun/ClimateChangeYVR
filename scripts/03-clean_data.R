@@ -127,6 +127,10 @@ cleaned_data$mean_temp_f_adj <- cleaned_data$mean_temp_F
 cleaned_data$total_precipitation_adj <- cleaned_data$total_precipitation
 cleaned_data$gust_speed_adj <- cleaned_data$gust_speed_km_h
 
+cleaned_data$log_wind_speed <- log(cleaned_data$wind_speed)
+cleaned_data$log_pressure <- log(cleaned_data$pressure_station)
+
+
 library(MASS)
 
 # Fit a simple intercept-only model
