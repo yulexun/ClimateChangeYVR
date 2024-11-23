@@ -548,6 +548,37 @@ We build our Model L as the following:
 
 The inclusion of the Box-Cox-transformed total precipitation further refines the model by accommodating non-linearity in precipitation data. The Gaussian family ensures that the residuals of the response variable follow a normal distribution after the transformations. As shown in @fig-plot-m4p-2, this model reduces heteroscedasticity, minimizes non-linear patterns in residuals, and improves overall interpretability and fit. Each coefficient indicates the multiplicative effect of a one-unit change in the respective predictor on the mean temperature after applying the logarithmic transformations. This model fits better than Model 2, as indicated in @tbl-summary-model, as the R2 and adjusted R2 are higher, AIC, BIC are smaller.
 
+## Bayesian Model
+After fitting the linear regression model using log and Box-Cox transformations, We extend the analysis by testing a Bayesian regression model (Model B). This model also predicts the log-transformed mean temperature (`log_mean_temp`) but incorporates prior and Bayesian inference to evaluate the uncertainty of parameter estimates. The predictors remain the same: wind speed (`wind_speed`), station pressure (`pressure_station`), Box-Cox-transformed total precipitation (`total_precipitation_boxcox`), and log-transformed gust speed (`log_gust_speed`).
+
+The Bayesian model is defined as:
+
+\begin{align}
+\text{log\_mean\_temp} &\sim \mathcal{N}(\mu, \sigma^2), \\
+\mu &= \beta_0 + \beta_1 \cdot \text{wind\_speed} + \beta_2 \cdot \text{pressure\_station} \\
+&\quad + \beta_3 \cdot \text{total\_precipitation\_boxcox} + \beta_4 \cdot \text{log\_gust\_speed}.
+\end{align}
+
+The prior distributions for the parameters are:
+
+- Coefficients ($\beta_1, \beta_2, \beta_3, \beta_4$): 
+  $$
+  \beta_i \sim \mathcal{N}(0, 10), \quad \text{for } i = 1, 2, 3, 4,
+  $$
+
+  reflecting moderate uncertainty centered around zero.
+
+- Intercept ($\beta_0$): 
+  $$
+  \beta_0 \sim \mathcal{N}(0, 10),
+  $$
+  indicating prior uncertainty about the baseline log-mean temperature.
+
+The model was fit using **Hamiltonian Monte Carlo (HMC)** via the `brms` package @brm. It uses:
+- **4 chains** for convergence,
+- **2000 iterations** per chain to ensure stability, 
+- **4 cores** for parallel computation, enabling efficient sampling.
+
 ## Polynomial Linear Model
 The residual plot in @fig-plot-m4p-2 shows a non-linear pattern, as indicated by the curved trend in the residuals. This suggests that the relationship between the predictors and the response variable is not fully captured by a linear model. Adding polynomial terms could help address this non-linearity by allowing the model to fit curved relationships.
 
