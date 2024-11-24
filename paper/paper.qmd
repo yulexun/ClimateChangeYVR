@@ -25,6 +25,7 @@ library(knitr)
 library(kableExtra)
 library(car)
 library(modelsummary)
+library(brms)
 
 raw_data_climate <- read_csv(here("data/01-raw_data/climateyvr.csv"))
 raw_data_ahccd <- read_csv(here("data/01-raw_data/ahccdyvr.csv"))
@@ -126,7 +127,7 @@ The data gathering and analysis is done in R [@citeR] with the following package
 
 ## Measurement
 
-The measurement of Canadian weather data involves a network of weather stations and data collection methods managed by Environment and Climate Change Canada (ECCC). These stations continuously measure meteorological parameters such as temperature, precipitation, wind speed, and pressure [@meteorological_service_of_canada_past_2023]. 
+The measurement of Canadian weather data involves a network of weather stations and data collection methods managed by Environment and Climate Change Canada (ECCC). These stations continuously measure meteorological parameters such as temperature, precipitation, wind speed, and pressure [@meteorological_service_of_canada_past_2023]. We choose the datesets from the Government of Canada for their coverage and quality control processes.
 
 According to the glossary published by @meteorological_service_of_canada_past_2023, Each day, measurement of temperature, rain, snow, precipitation, and gust speed are recorded. The wind and gust speed is measured in km/h with anemometer dials at a standard height of 10 meters above the ground. Rain and precipitation are measured in millimeter using the standard Canadian rain guage, a cylindrical container 40 cm high and 11.3 cm in diameter. Snow is measured in centimeters at several points that appear representative of the immediate area and then averaged. These raw data are combined to one entry and added to the historical climate database with a generated climate id and the station's location and id. Each row also have month and year of the data measured.
 
@@ -193,7 +194,7 @@ The variables in the two datasets contains the following:
 
 ## Data Cleaning {#sec-datacleaning}
 
-The data cleaning process consists of two steps. First, we standardize and clean the column headers. Second, we merge the two datasets into a single combined dataset. The dataset used in this analysis combines information from two distinct sources: climate data (raw_data_climate) and historical weather data (raw_data_ahccd). The analysis spans data collected between 1959 and 2010 for training and testing purposes. 
+The data cleaning process consists of two steps. First, we standardize and clean the column headers. Second, we merge the two datasets into a single combined dataset. The dataset used in this analysis combines information from two distinct sources: historical weather data (raw_data_climate) and AHCCD weather data (raw_data_ahccd). The analysis spans data collected monthly between August 1959 and August 2010 for training and testing purposes. 
 
 The cleaned dataset contains a range of weather variables providing detailed monthly observations. The `date` variable represents the observation month, standardized to the first day of each month. **`wind_speed`** (km/h) captures average monthly wind speeds, while **`total_precipitation`** (mm) measures the total monthly precipitation, including rain and snow. **`snow`** (mm) records total snowfall, and **`pressure_station`** (kPa) indicates atmospheric pressure at the observation station. **`max_temp`** (°C), **`min_temp`** (°C), and **`mean_temp`** (°C) represent the monthly averages of maximum, minimum, and overall temperatures, respectively. **`total_rain`** (mm) focuses solely on rainfall amounts, distinct from snowfall. **`gust_speed_km_h`** (km/h) records the monthly average of maximum gust speeds. Additionally, constructed variables include **`mean_temp_F`**, the mean temperature was converted to Fahrenheit using 
 $$
@@ -204,11 +205,11 @@ $$
 \log(\text{mean\_temp\_F})
 $$
 . 
-Additionally, a Box-Cox transformation was applied to the `total_precipitation` variable to address skewness and stabilize variance, resulting in the new variable `total_precipitation_boxcox`. For `gust_speed_km_h`, `wind_speed` and `pressure_station`, a log transformation was used to stabilize variance and reduce right-skewness in their distribution, creating the new variable `log_gust_speed`, `log_wind_speed` and `log_pressure`. 
+Moreover, a Box-Cox transformation was applied to the `total_precipitation` variable to address skewness and stabilize variance, resulting in the new variable `total_precipitation_boxcox`. For `gust_speed_km_h`, `wind_speed` and `pressure_station`, a log transformation was used to stabilize variance and reduce right-skewness in their distribution, creating the new variable `log_gust_speed`, `log_wind_speed` and `log_pressure`. 
 
 All column names were cleaned and standardized using `janitor` in tidyverse [@tidyverse] to ensure consistency and readability. Dates were parsed into a unified format (`yyyy-mm-dd`) and aligned with monthly observations using the lubridate package [@lubridate]. The datasets were merged into a single combined dataset using the `date_time` variable as the common key. Finally, constructed variables, including `mean_temp_F`, `total_precipitation_boxcox`, `log_gust_speed`, `log_mean_temp`, `log_wind_speed` and `log_pressure` were added to the cleaned data. 
 
-### Cleaned Data
+### Cleaned Data and Training/Testing Split
 
 The top 6 rows of the cleaned data is displayed in @tbl-cleaned-data.
 
@@ -254,11 +255,13 @@ analysis_data |>
 
 The summary statistics of the combined dataset is displayed in @tbl-summary.
 
+The cleaned and combined dataset is splitted into training group and testing group randomly. The training dataset contains 70% of the cleaned dataset and the testing dataset contains 30% of the cleaned dataset. The training dataset is used to fit the model. The test dataset is used to evaluate the model's performance on unseen data.
+
 ## Characteristics of Cleaned Data
 
 All of the variables in the dataset are numeric, the histograms are plotted in @fig-hist-temp and @fig-hist-all. The following section explains the characteristics of these variables.
 
-### Skewness in Mean Temperature, Total Precipitation and Gust Speed
+### Skewness in Variables
 
 ```{r}
 #| label: fig-hist-temp
@@ -399,36 +402,25 @@ ggplot(analysis_data, aes(x = `total_precipitation`, y = `total_rain`)) +
   theme_minimal()
 ```
 
-# Model
+# Model {#sec-model}
 
 The goal of our modelling strategy is to find a model that can predict temperature changes with other weather data.
 
-We build a bayesian model, a general linear model and a general linear model with a 2 degrees of polynomial transformation. We determine the best model is the linear model with polynomial transformation. The detailed steps are recorded in @sec-model-detail. 
+We build a bayesian model, a linear model and a linear model with a 2 degrees of polynomial transformation. We choose linear regression instead of general linear model because all of the variables are numeric. According to @kumar_glm_2023, linear regression is applicable when the response is continuous and approximately normally distributed. We determine the best model is the linear model with polynomial transformation. The detailed steps are recorded in @sec-model-detail. 
 
 ## Model set-up
 
-Define $y_i$ as the number of seconds that the plane remained aloft. Then $\beta_i$ is the wing width and $\gamma_i$ is the wing length, both measured in millimeters.  
+The final model we choose is the linear model with polynomial transformation.
 
-\begin{align} 
-y_i|\mu_i, \sigma &\sim \mbox{Normal}(\mu_i, \sigma) \\
-\mu_i &= \alpha + \beta_i + \gamma_i\\
-\alpha &\sim \mbox{Normal}(0, 2.5) \\
-\beta &\sim \mbox{Normal}(0, 2.5) \\
-\gamma &\sim \mbox{Normal}(0, 2.5) \\
-\sigma &\sim \mbox{Exponential}(1)
-\end{align}
+This polynomial linear regression model predicts the log-transformed mean temperature (`log_mean_temp`) based on quadratic polynomial transformations of four predictors: 
 
-We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. We use the default priors from `rstanarm`.
+- log-transformed wind speed (`log_wind_speed`), 
+- log-transformed pressure (`log_pressure`), 
+- Box-Cox-transformed total precipitation (`total_precipitation_boxcox`), and 
+- log-transformed gust speed (`log_gust_speed`).
 
 ## MLR Model
 
-```{r}
-fitted_values <- fitted(m4)
-ggplot(data = train_data, aes(x = fitted_values, y = mean_temp_F)) +
-  geom_point(color = "blue", alpha = 0.7) +
-  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed", size = 1) +
-  labs(x = "Predicted Temperature", y = "Actual Temperature", title = "Actual Temperature vs. Predicted Values")
-```
 
 ### Model justification
 
@@ -572,18 +564,112 @@ The prior distributions for the parameters are:
   $$
   \beta_0 \sim \mathcal{N}(0, 10),
   $$
+
   indicating prior uncertainty about the baseline log-mean temperature.
 
-The model was fit using **Hamiltonian Monte Carlo (HMC)** via the `brms` package @brm. It uses:
-- **4 chains** for convergence,
-- **2000 iterations** per chain to ensure stability, 
-- **4 cores** for parallel computation, enabling efficient sampling.
+The model was fit using the `brms` package @brm. It uses:
+
+- 4 chains for convergence,
+- 2000 iterations per chain to ensure stability, 
+- 4 cores for parallel computation, enabling efficient sampling.
+
+Unlike linear regression, which provides point estimates and assumes fixed parameter values, Bayesian regression incorporates prior knowledge and generates posterior distributions, offering a probabilistic framework that quantifies uncertainty in parameter estimates. 
+
+## The Linear Model has Better Fit than Bayesian Model
+
+We calculate the RMSE value and MAE value of the Bayesian model and the Linear model based on the test dataset, because it evaluates how well the model performs on data it has never seen before, providing a realistic measure of predictive accuracy. 
+
+The RMSE measures the average squared difference between the observed ($y_i$) and predicted ($\hat{y}_i$) values. It is calculated as:
+
+$$
+\text{RMSE} = \sqrt{\frac{1}{n} \sum_{i=1}^n (y_i - \hat{y}_i)^2}
+$$
+
+Where:
+
+- $y_i$: The actual value of the $i$-th observation.
+- $\hat{y}_i$: The predicted value for the $i$-th observation.
+- $n$: The total number of observations.
+
+The MAE measures the average absolute difference between the observed ($y_i$) and predicted ($\hat{y}_i$) values. It is calculated as:
+
+$$
+\text{MAE} = \frac{1}{n} \sum_{i=1}^n |y_i - \hat{y}_i|
+$$
+
+Where:
+
+- $y_i$: The actual value of the $i$-th observation.
+- $\hat{y}_i$: The predicted value for the $i$-th observation.
+- $n$: The total number of observations.
+
+By comparing the RMSE and MAE results in @tbl-brm, the Linear Model L has slightly lower RMSE and MAE compared to the Bayesian model, suggesting it has a marginally better fit for the given data. As a result, we choose the Linear Model over the Bayesian Model.
+
+
+```{r}
+#| label: tbl-brm
+#| tbl-cap: Summary of Bayesian Model and Comparison of RMSE / MAE
+#| tbl-subcap: ['Bayesian Model Shows Similar R2 value Compare to Linear', 'Linear Model shows better fit']
+#| echo: false
+#| warning: false
+#| layout-ncol: 2
+modelsummary(brm)
+
+# RMSE and MAE
+# GLM
+glm_model <- glm_log
+
+# BRM
+brm_model <- brm
+
+# GLM predictions (reverse log transformation and convert to Celsius)
+glm_predictions_log <- predict(glm_model, newdata = test_data)
+glm_predictions_F <- exp(glm_predictions_log)  # Predicted in Fahrenheit
+glm_predictions <- (glm_predictions_F - 32) * 5 / 9  # Convert to Celsius
+
+# BRM predictions (posterior predictive mean, reverse log transformation and convert to Celsius)
+brm_predictions_log <- colMeans(posterior_predict(brm_model, newdata = test_data))
+brm_predictions_F <- exp(brm_predictions_log)  # Predicted in Fahrenheit
+brm_predictions <- (brm_predictions_F - 32) * 5 / 9  # Convert to Celsius
+
+# Ensure consistency: Predicted and actual values in Celsius
+test_data <- test_data %>%
+  mutate(
+    actual_mean_temp = mean_temp,      # Actual values (Celsius)
+    glm_predicted = glm_predictions,  # GLM predictions (Celsius)
+    brm_predicted = brm_predictions   # Bayesian predictions (Celsius)
+  )
+
+# Calculate RMSE
+rmse_glm <- sqrt(mean((test_data$actual_mean_temp - test_data$glm_predicted)^2))
+rmse_brm <- sqrt(mean((test_data$actual_mean_temp - test_data$brm_predicted)^2))
+
+# Calculate MAE
+mae_glm <- mean(abs(test_data$actual_mean_temp - test_data$glm_predicted))
+mae_brm <- mean(abs(test_data$actual_mean_temp - test_data$brm_predicted))
+
+# Create a data frame for the metrics
+metrics <- data.frame(
+  Model = c("Linear", "Bayesian"),
+  RMSE = c(rmse_glm, rmse_brm),
+  MAE = c(mae_glm, mae_brm)
+)
+
+# Display the table using kable
+kable(metrics) %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+
+```
 
 ## Polynomial Linear Model
-The residual plot in @fig-plot-m4p-2 shows a non-linear pattern, as indicated by the curved trend in the residuals. This suggests that the relationship between the predictors and the response variable is not fully captured by a linear model. Adding polynomial terms could help address this non-linearity by allowing the model to fit curved relationships.
+Since we choose the Linear Model L over Bayesian Model, We inspect the residual plot of the linear model. The residual plot in @fig-plot-m4p-2 shows a non-linear pattern, as indicated by the curved trend in the residuals. This suggests that the relationship between the predictors and the response variable is not fully captured by a linear model. Adding polynomial terms could help address this non-linearity by allowing the model to fit curved relationships. The detail of the new model is discussed in @sec-model.
 
-# Summary Statistic of cleaned dataset
 \newpage
+
+# Additional Data Details
+
+The summary statistics of the cleaned data are shown in @tbl-summary.
+
 ```{r}
 #| label: tbl-summary
 #| tbl-cap: Summary Statistics of Raw Climate Data 
@@ -633,6 +719,7 @@ analysis_data |>
 
 \newpage
 
+As discussed in @sec-data, the histogram of variables before and after transformation is displayed in @fig-hist-all.
 ```{r}
 #| label: fig-hist-all
 #| fig-cap: Other Variables Show Normal Distribution
@@ -690,9 +777,6 @@ ggplot(df, aes(x = log_wind_speed)) +
   theme_minimal()
 
 ```
-
-# Additional Model Detail {#sec-model-select}
-
 
 
 # Methodology of ECCC {#sec-methodology}

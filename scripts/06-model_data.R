@@ -86,42 +86,6 @@ modelsummary(glm_model_log)
 
 #### Validation Testing ####
 
-# GLM
-glm_model <- glm_model_poly
-
-# BRM
-brm_model <- bayesian_model_log
-
-# GLM predictions (reverse log transformation and convert to Celsius)
-glm_predictions_log <- predict(glm_model, newdata = test_data)
-glm_predictions_F <- exp(glm_predictions_log)  # Predicted in Fahrenheit
-glm_predictions <- (glm_predictions_F - 32) * 5 / 9  # Convert to Celsius
-
-# BRM predictions (posterior predictive mean, reverse log transformation and convert to Celsius)
-brm_predictions_log <- colMeans(posterior_predict(brm_model, newdata = test_data))
-brm_predictions_F <- exp(brm_predictions_log)  # Predicted in Fahrenheit
-brm_predictions <- (brm_predictions_F - 32) * 5 / 9  # Convert to Celsius
-
-# Ensure consistency: Predicted and actual values in Celsius
-test_data <- test_data %>%
-  mutate(
-    actual_mean_temp = mean_temp,      # Actual values (Celsius)
-    glm_predicted = glm_predictions,  # GLM predictions (Celsius)
-    brm_predicted = brm_predictions   # Bayesian predictions (Celsius)
-  )
-
-# Calculate RMSE
-rmse_glm <- sqrt(mean((test_data$actual_mean_temp - test_data$glm_predicted)^2))
-rmse_brm <- sqrt(mean((test_data$actual_mean_temp - test_data$brm_predicted)^2))
-
-# Calculate MAE
-mae_glm <- mean(abs(test_data$actual_mean_temp - test_data$glm_predicted))
-mae_brm <- mean(abs(test_data$actual_mean_temp - test_data$brm_predicted))
-
-# Output Results
-print(c(GLM_RMSE = rmse_glm, BRM_RMSE = rmse_brm))
-print(c(GLM_MAE = mae_glm, BRM_MAE = mae_brm))
-
 # Visualize actual vs predicted
 library(ggplot2)
 
