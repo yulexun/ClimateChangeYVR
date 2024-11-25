@@ -404,9 +404,9 @@ ggplot(analysis_data, aes(x = `total_precipitation`, y = `total_rain`)) +
 
 # Model {#sec-model}
 
-The goal of our modelling strategy is to find a model that can predict temperature changes with other weather data.
+The goal of our modelling strategy is to find a model that can predict temperature changes with other weather data as predictors such as wind speed, pressure, precipitation and gust speed.
 
-We build a bayesian model, a linear model and a linear model with a 2 degrees of polynomial transformation. We choose linear regression instead of general linear model because all of the variables are numeric. According to @kumar_glm_2023, linear regression is applicable when the response is continuous and approximately normally distributed. We determine the best model is the linear model with polynomial transformation. The detailed steps are recorded in @sec-model-detail. 
+We build a linear model, a bayesian model, and a linear model with a 2 degrees of polynomial transformation. We determine the best model is the linear model with polynomial transformation. The detailed steps are recorded in @sec-model-detail. We choose linear regression instead of general linear model because all of the variables are numeric. According to @kumar_glm_2023, linear regression is applicable when the response is continuous and approximately normally distributed, which is more applicable to our dataset. 
 
 ## Model set-up
 
@@ -419,8 +419,44 @@ This polynomial linear regression model predicts the log-transformed mean temper
 - Box-Cox-transformed total precipitation (`total_precipitation_boxcox`), and 
 - log-transformed gust speed (`log_gust_speed`).
 
+The model introduces non-linear relationships by including polynomial terms up to the second degree (quadratic) for each predictor. 
+
 ## MLR Model
 
+The model is mathematically expressed as:
+
+\begin{align}
+\text{Log Mean Temperature} &= \beta_0 
++ \beta_{1} \cdot \text{Log Wind Speed} + \beta_{2} \cdot (\text{Log Wind Speed})^2 \\
+&+ \beta_{3} \cdot \text{Log Pressure} + \beta_{4} \cdot (\text{Log Pressure})^2 \\
+&+ \beta_{5} \cdot \text{Box-Cox Total Precipitation} + \beta_{6} \cdot (\text{Box-Cox Total Precipitation})^2 \\
+&+ \beta_{7} \cdot \text{Log Gust Speed} + \beta_{8} \cdot (\text{Log Gust Speed})^2 \\
+&+ \epsilon
+\end{align}
+
+Where: 
+
+1. **Intercept ($\beta_0$):**
+   - Represents the baseline log-transformed mean temperature when all predictors are zero.
+
+2. **Predictors and Their Polynomial Terms:**
+   - **Wind Speed (Log Wind Speed):**
+     - $\beta_{1} \cdot \text{Log Wind Speed}$ models the linear effect of wind speed.
+     - $\beta_{2} \cdot (\text{Log Wind Speed})^2$ captures the quadratic (non-linear) effect of wind speed.
+   - **Atmospheric Pressure (Log Pressure):**
+     - $\beta_{3} \cdot \text{Log Pressure}$ models the linear effect of atmospheric pressure.
+     - $\beta_{4} \cdot (\text{Log Pressure})^2$ captures the quadratic effect of atmospheric pressure.
+   - **Total Precipitation (Box-Cox Total Precipitation):**
+     - $\beta_{5} \cdot \text{Box-Cox Total Precipitation}$ models the linear effect of total precipitation.
+     - $\beta_{6} \cdot (\text{Box-Cox Total Precipitation})^2$ captures the quadratic effect of total precipitation.
+   - **Gust Speed (Log Gust Speed):**
+     - $\beta_{7} \cdot \text{Log Gust Speed}$ models the linear effect of gust speed.
+     - $\beta_{8} \cdot (\text{Log Gust Speed})^2$ captures the quadratic effect of gust speed.
+
+3. **Residual Error ($\epsilon$):**
+   - Represents the variation in the log-transformed mean temperature that is not explained by the predictors.
+
+The purpose of including polynomial terms in this model is to capture non-linear relationships between the predictors and the response variable, allowing the model to fit more complex, curved patterns that a purely linear model cannot accommodate. By incorporating quadratic terms for each predictor, the model gains flexibility in representing real-world data relationships, reducing bias, and addressing systematic patterns in residuals that may indicate non-linearity. This enhances the model's predictive performance, making it capable of explaining variance that would otherwise remain unaccounted for in a simple linear regression, while still maintaining the interpretability and simplicity of a linear regression framework.
 
 ### Model justification
 
