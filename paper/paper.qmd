@@ -39,71 +39,6 @@ brm <- readRDS(here("models/brm.rds"))
 glm_log <- readRDS(here("models/glm_log.rds"))
 ```
 
-```{r}
-# Calculate diagnostic measures
-glm_model <- glm
-# Assuming `glm_model` is your fitted model
-
-# 1. Linearity: Residuals vs Fitted Plot
-plot(glm_model, which = 1, main = "Linearity Check: Residuals vs Fitted")
-plot(glm_log, which = 1, main = "Linearity Check: Residuals vs Fitted")
-
-# Look for a random scatter of points. Patterns indicate non-linearity.
-
-# 2. Homoscedasticity: Scale-Location Plot
-plot(glm_model, which = 3, main = "Homoscedasticity Check: Scale-Location")
-plot(glm_log, which = 3, main = "Homoscedasticity Check: Scale-Location")
-# Points should be evenly spread. A funnel shape indicates heteroscedasticity.
-
-# 3. Normality of Residuals: Q-Q Plot
-plot(glm_model, which = 2, main = "Normality Check: Q-Q Plot")
-plot(glm_log, which = 2, main = "Normality Check: Q-Q Plot")
-
-# Points should lie approximately along the diagonal line.
-
-# 4. Residual Histogram: Another Normality Check
-residuals <- residuals(glm_model)
-hist(residuals, main = "Histogram of Residuals", xlab = "Residuals")
-residuals <- residuals(glm_log)
-hist(residuals, main = "Histogram of Residuals", xlab = "Residuals")
-
-# Check for symmetry. A skewed histogram suggests non-normal residuals.
-
-# 5. Multicollinearity: Variance Inflation Factor (VIF)
-vif_values <- vif(glm_model)
-print(vif_values)
-vif_values <- vif(glm_log)
-print(vif_values)
-# VIF > 5 indicates high multicollinearity. Consider removing highly correlated predictors.
-
-# 6. Cook's Distance: Influence of Observations
-cooksd <- cooks.distance(glm_model)
-plot(cooksd, main = "Cook's Distance", type = "h")
-abline(h = 4 / nrow(model.frame(glm_model)), col = "red", lty = 2)
-
-cooksd <- cooks.distance(glm_log)
-plot(cooksd, main = "Cook's Distance", type = "h")
-abline(h = 4 / nrow(model.frame(glm_log)), col = "red", lty = 2)
-# Points above the red line are highly influential.
-
-# 7. Leverage: Identify High Leverage Points
-leverage <- hatvalues(glm_model)
-plot(leverage, main = "Leverage Check", type = "h")
-abline(h = 2 * mean(leverage), col = "red", lty = 2)
-
-leverage <- hatvalues(glm_log)
-plot(leverage, main = "Leverage Check", type = "h")
-abline(h = 2 * mean(leverage), col = "red", lty = 2)
-# Points above the red line have high leverage.
-
-
-AIC(glm_model)
-AIC(glm_log)
-BIC(glm_model)
-BIC(glm_log)
-
-```
-
 # Introduction
 
 Climate change is a global challenges today. Patterns such as rising temperatures, shifting weather systems, and increased frequency of severe weather events. In 2021, floods swept through streets in Japanese cities, displacing millions, while extreme heat fueled wildfires in Siberia [@greenpeace_east_asia_5_2021]. Climate change impacts human health, ecosystems, food security, water supplies, and economic stability. Understanding the factors driving temperature changes is necessary for designing effective mitigation strategies. This requires examining the various contributors to temperature variations.
@@ -423,7 +358,7 @@ The model introduces non-linear relationships by including polynomial terms up t
 
 ## MLR Model
 
-The model is mathematically expressed as:
+The Model LP is mathematically expressed as:
 
 \begin{align}
 \text{Log Mean Temperature} &= \beta_0 
@@ -458,26 +393,126 @@ Where:
 
 The purpose of including polynomial terms in this model is to capture non-linear relationships between the predictors and the response variable, allowing the model to fit more complex, curved patterns that a purely linear model cannot accommodate. By incorporating quadratic terms for each predictor, the model gains flexibility in representing real-world data relationships, reducing bias, and addressing systematic patterns in residuals that may indicate non-linearity. This enhances the model's predictive performance, making it capable of explaining variance that would otherwise remain unaccounted for in a simple linear regression, while still maintaining the interpretability and simplicity of a linear regression framework.
 
-### Model justification
+### Model Validation {#sec-validation}
 
-We expect a positive relationship between the size of the wings and time spent aloft. In particular...
+The linear regression model was chosen to analyze the relationship between wind speed, atmospheric pressure, total precipitation, and gust speed with the log-transformed mean temperature. The primary goal of this model is to quantify the effect of each predictor on the response variable and to make predictions. The linear model is suitable because the relationship between the predictors and the response variable was found to be approximately linear after applying logarithmic and Box-Cox transformations to address non-linearity and skewness. 
 
-We can use maths by including latex between dollar signs, for instance $\theta$.
+#### Assumptions Fit the Data
 
+```{r}
+#| label: fig-assumption
+#| fig-cap: Model LP meets all assumtions of linear regression
+#| fig-subcap: ['Linearity Check: Residuals vs Fitted', 'Normality Check: Q-Q Plot', 'Homoscedasticity Check: Scale-Location']
+#| echo: false
+#| warning: false
+#| layout-ncol: 2
+
+plot(glm, which = 1)
+plot(glm, which = 2)
+plot(glm, which = 3)
+```
+
+The model, which uses linear regression, has four assumptions: linearity, homoscedasticity, and approximate normality of residuals. 
+
+The linearity assumption states that the relationship between each predictor and the response variable is linear. This assumption was evaluated by examining scatterplots of the predictors against the response variable and by analyzing residuals versus fitted values. As shown in @fig-assumption-1, The red smooth line indicates only a slight curvature, and the the residuals scatter reasonably randomly around the 0 line. The resulting diagnostic plots showed no obvious systematic patterns, indicating that the linearity assumption is reasonably satisfied.
+
+Homoscedasticity requires that the variance of the residuals remains constant across all levels of the predictors. In @fig-assumption-3, the points (standardized residuals) are evenly spread across the range of fitted values. There is no clear fan or funnel shape, suggesting that the variance of the residuals is fairly constant, which supports the assumption of homoscedasticity.
+
+Linear regression assumes that the residuals follow a normal distribution. This assumption was assessed using Q-Q plots in @fig-assumption-2, where the residuals were compared to a theoretical normal distribution. Most points aligned closely with the diagonal line, indicating that the residuals are approximately normally distributed.
+
+Independence assumes that each observation in the dataset is unrelated to others. This was ensured during data collection or preparation according to ECCC's methodology as discussed in @sec-methodology.
+
+Multicollinearity occurs when predictors are highly correlated, making it difficult to isolate their individual effects. Variance Inflation Factor (VIF) quantifies how much multicollinearity inflates the variance of the estimated regression coefficients. The Generalized VIF (GVIF) is used because each polynomial term represents more than one degree of freedom. The result in @tbl-vif are below the commonly accepted threshold of 5, indicating low multicollinearity in the predictors. 
+
+```{r}
+#| label: tbl-vif
+#| tbl-cap: VIF Value Indicates Low Multicollinearity
+#| echo: false
+#| warning: false
+
+# Calculate VIF
+vif_values <- vif(glm)
+kable(vif_values)
+```
+
+#### Validation on Test Data
+
+We validate our Model LP with test data to evaluate the model's generalizability and performance on unseen data. 
+
+The R2 value calculated on the test data ($R^2 = 0.59$) is very close to the R2 value of the model on the training data ($R^2 = 0.61$), as discussed in @sec-result-r2 This similarity indicates that the model generalizes well to unseen data, as its performance on the test set is consistent with its performance during training. The small difference between the two R2 values suggests that the model is not overfitting the training data and captures the underlying relationships in the data effectively.
+
+
+```{r}
+#| label: tbl-test-validate
+#| tbl-cap: R2 value on test data is close to train data
+#| echo: false
+#| warning: false
+
+test_data$predicted <- predict(glm, newdata = test_data)
+SSR <- sum((test_data$log_mean_temp - test_data$predicted)^2)  # Sum of Squared Residuals
+TSS <- sum((test_data$log_mean_temp - mean(test_data$log_mean_temp))^2)  # Total Sum of Squares
+R2 <- 1 - (SSR / TSS)
+R2T <- summary(glm)$r.squared
+results <- data.frame(
+  Metric = c("SSR", "TSS", "R2", "R2-Train"),
+  Value = c(SSR, TSS, R2, R2T)
+)
+
+kable(results)
+```
+
+
+### Model Justification 
+
+The decision to use a linear regression model with polynomial terms for this analysis is grounded in the need to capture non-linear relationships between the predictors and the log-transformed mean temperature (log_mean_temp). Initial exploratory data analysis and diagnostic plots indicated that the relationships between the predictors, such as log-transformed wind speed, pressure, total precipitation, and gust speed, and the response variable were not strictly linear. Applying second-degree polynomial terms allows the model to account for curvature and interactions within the data while maintaining interpretability.
+
+The polynomial linear regression model was selected over alternative non-linear methods due to its balance between complexity and simplicity. Polynomial terms extend the linear model's capacity to capture non-linear patterns while preserving the interpretability of regression coefficients. The inclusion of transformations, such as logarithmic and Box-Cox, further improves the model by addressing issues of skewness and heteroscedasticity observed in the raw data.
+
+Finally, the model assumptions were rigorously evaluated in @sec-validation. Residual plots confirmed that the linearity assumption was largely met, while the Scale-Location plot and diagnostic tests supported the homoscedasticity of residuals. Variance Inflation Factor (VIF) values for the predictors were all well below the critical threshold, indicating no significant multicollinearity. These results ensure that the model remains valid and reliable for inference and prediction.
 
 # Results
 
 Our results are summarized in @tbl-modelresults.
 
+```{r}
+#| label: tbl-modelresults
+#| tbl-cap: Summary of Model LP
+#| echo: false
+#| warning: false
+modelsummary(glm)
+```
+
+## Intercept Indicates a Strong Baseline In Temperature
+
+The intercept of the model is estimated at **3.899**, representing the predicted value of the log-transformed mean temperature when all predictors are at their mean (after centering and scaling in the polynomial terms). This value serves as the baseline against which the effects of all predictors are measured. A significant intercept indicates the model reliably predicts the baseline log-mean temperature.
+
+## Wind Speed: Non-Linear Increase and Decline in Temperature
+The first-degree polynomial term for log-transformed wind speed ($\text{poly(log\_wind\_speed, 2)1}$) has a positive coefficient of **0.260**, suggesting that increasing wind speed is associated with a slight increase in $\log(\text{mean\_temp})$. However, the second-degree term ($\text{poly(log\_wind\_speed, 2)2}$) has a negative coefficient of **-0.449**, indicating a reversing effect at higher wind speeds. This quadratic relationship reflects non-linear relationships between wind speed and temperature.
+
+## Atmospheric Pressure: Consistent Negative Impact on Temperature
+Log-transformed atmospheric pressure shows a consistently negative relationship with $\log(\text{mean\_temp})$. The first-degree term ($\text{poly(log\_pressure, 2)1}$) has a coefficient of **-0.388**, and the second-degree term ($\text{poly(log\_pressure, 2)2}$) is more negative at **-0.973**. This indicates that higher atmospheric pressure is associated with a reduction in $\log(\text{mean\_temp})$, and the quadratic term amplifies this effect, particularly at extreme values of pressure.
+
+## Total Precipitation: The Strongest Negative Effect
+The Box-Cox transformed total precipitation has the strongest impact on $\log(\text{mean\_temp})$ among all predictors. The first-degree term ($\text{poly(total\_precipitation\_boxcox, 2)1}$) has a significant negative coefficient of **-2.016**, implying that higher precipitation reduces $\log(\text{mean\_temp})$ substantially. The second-degree term ($\text{poly(total\_precipitation\_boxcox, 2)2}$) is positive at **0.218**, indicating a slight mitigation of this negative effect at extreme precipitation levels.
+
+## Gust Speed: Decreases Temperature but Shows Curvature
+The first-degree term for log-transformed gust speed ($\text{poly(log\_gust\_speed, 2)1}$) has a negative coefficient of **-0.980**, showing that increasing gust speed reduces $\log(\text{mean\_temp})$. However, the second-degree term ($\text{poly(log\_gust\_speed, 2)2}$) has a positive coefficient of **0.347**, suggesting a minor curvature in the relationship where the negative effect is less pronounced at higher gust speeds.
+
+## Model Metrics: Explains 61% Variance with Low RMSE
+The model explains a significant portion of the variance in $\log(\text{mean\_temp})$, as indicated by an $R^2$ value of **0.610** and an adjusted $R^2$ of **0.603**. These values demonstrate that approximately 61% of the variability in $\log(\text{mean\_temp})$ is explained by the predictors, even after accounting for the complexity of the model.
+
+The model has a low RMSE of **0.12**, indicating accurate predictions with minimal average error. The AIC (**-601.2**) and BIC (**-560.6**) values suggest a strong fit compared to alternative models.
 
 
 # Discussion
 
-## First discussion point {#sec-first-point}
+## Summary of Results: Precipitation Leads, While Wind and Pressure Add Complexity {#sec-first-point}
 
-If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
+This polynomial regression model captures non-linear relationships between predictors and $\log(\text{mean\_temp})$ effectively, with total precipitation exerting the strongest influence. Wind speed and gust speed contribute with both positive and negative effects, depending on the quadratic curvature. Atmospheric pressure consistently shows a negative impact. Despite its strengths, slight evidence of heteroscedasticity and non-linear residual patterns observed in diagnostic plots suggest that future refinements, such as interaction terms or alternative modeling techniques, could improve the model's performance.
 
-## Second discussion point
+
+## The finding does not agree with Visser
+## the finding does match with Wills
 
 Please don't use these as sub-heading labels - change them to be what your point actually is.
 
@@ -485,7 +520,14 @@ Please don't use these as sub-heading labels - change them to be what your point
 
 ## Weaknesses and next steps
 
+### Limitations on the Model LP
+
+While the polynomial linear regression model captures much of the relationship between the predictors and the log-transformed mean temperature, some limitations remain. @fig-assumption-1 indicates that the relationship is not completely linear, with minor deviations suggesting that the model may not fully account for certain non-linearities. Additionally, @fig-assumption-3 shows slight evidence of heteroscedasticity at the extreme fitted values, indicating that the variance of residuals is not entirely constant. These limitations suggest that the model could benefit from further refinement, such as applying additional transformations, exploring interaction terms, or using alternative techniques like weighted least squares or robust regression to address potential heteroscedasticity. 
 Weaknesses and next steps should also be included.
+
+### Limitation on the Response Mean Temperature
+
+### Limitation on only researching temperature
 
 \newpage
 
@@ -495,7 +537,7 @@ Weaknesses and next steps should also be included.
 # License
 Contains information licensed under the [Open Government Licence – Canada](https://open.canada.ca/en/open-government-licence-canada)
 
-# Model Details {#sec-model-detail}
+# Additional Model Details {#sec-model-detail}
 ## MLR Model With Every Predictor in Cleaned Data
 
 The first model predicts mean temperature ($\text{mean\_temp\_F}$) based on multiple predictors: wind speed ($\text{wind\_speed}$), total precipitation ($\text{total\_precipitation}$), snow ($\text{snow}$), station pressure ($\text{pressure\_station}$), maximum temperature ($\text{max\_temp}$), minimum temperature ($\text{min\_temp}$), total rainfall ($\text{total\_rain}$), and gust speed ($\text{gust\_speed\_km\_h}$).
@@ -644,7 +686,7 @@ By comparing the RMSE and MAE results in @tbl-brm, the Linear Model L has slight
 
 ```{r}
 #| label: tbl-brm
-#| tbl-cap: Summary of Bayesian Model and Comparison of RMSE / MAE
+#| tbl-cap: Summary of Bayesian Model and Comparison of RMSE / MAE on Test Data
 #| tbl-subcap: ['Bayesian Model Shows Similar R2 value Compare to Linear', 'Linear Model shows better fit']
 #| echo: false
 #| warning: false
