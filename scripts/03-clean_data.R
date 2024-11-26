@@ -44,17 +44,11 @@ data_climate <- raw_data_climate[
 
 
 # only keep variables related to this research
-variables_to_keep <- c(
-  "date_time", "wind_speed_vitesse_vent", "total_precip_precip_totale",
-  "snow_neige", "pressure_station_pression_station"
-)
 
 # For the first dataset (data_ahccd)
 cleaned_data_ahccd <- data_ahccd %>%
-  dplyr::select(
-    "date_time", "wind_speed_vitesse_vent", "total_precip_precip_totale",
-    "snow_neige", "pressure_station_pression_station"
-  )
+  dplyr::select("date_time", "wind_speed_vitesse_vent", "total_precip_precip_totale",
+  "snow_neige", "pressure_station_pression_station")
 
 
 # For the second dataset (data_climate)
