@@ -122,6 +122,13 @@
       ],
       "Hash": "0776bf7526869e0286b0463cb72fb211"
     },
+    "Metrics": {
+      "Package": "Metrics",
+      "Version": "0.1.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "1fdc9b3adfe2e2f8f77c22a59cf322ec"
+    },
     "QuickJSR": {
       "Package": "QuickJSR",
       "Version": "1.4.0",
