@@ -44,9 +44,9 @@ glm_log <- readRDS(here("models/glm_log.rds"))
 
 Climate change is a global challenges today. Patterns such as rising temperatures, shifting weather systems, and increased frequency of severe weather events. In 2021, floods swept through streets in Japanese cities, displacing millions, while extreme heat fueled wildfires in Siberia [@greenpeace_east_asia_5_2021]. Climate change impacts human health, ecosystems, food security, water supplies, and economic stability. Understanding the factors driving temperature changes is necessary for designing effective mitigation strategies. This requires examining the various contributors to temperature variations.
 
-Some scholars have examined the changing climate. @xu_melting_2009 analyze the effects of rising temperatures in the Himalayas, highlighting increased frequency and duration of extreme events and shifts in ecosystems. These changes pose challenges to water supply, agriculture, and human populations. @visser_eliminating_2021 investigates the relationship between precipitation and temperature using data from the Australian Bureau of Meteorology. Visser's regression model indicates that average precipitation intensities increase with temperature, suggesting more intense rainfall in a warmer climate. The role of sea level pressure is also significant. @wills_systematic_2022 note that observed trends in sea level pressure have intensified warming in the Indo-Pacific Warm Pool and caused slight cooling in the eastern equatorial Pacific. However, as @zhang_economic_2017 argue, much of the research has focused on temperature and precipitation. @zhang_economic_2017 expands on this by incorporating additional predictors—relative humidity and wind speed—and concludes, using data from the Ministry of Agriculture of China, that these variables are important in understanding climate dynamics. 
+Some scholars have examined the changing climate. @xu_melting_2009 analyze the effects of rising temperatures in the Himalayas, highlighting increased frequency and duration of extreme events and shifts in ecosystems. These changes pose challenges to water supply, agriculture, and human populations. @visser_eliminating_2021 investigates the relationship between precipitation and temperature using data from the Australian Bureau of Meteorology. Visser's regression model indicates that average precipitation intensities increase with temperature, suggesting more intense rainfall in a warmer climate. The role of sea level pressure is also significant. @wills_systematic_2022 note that observed trends in sea level pressure have caused slight cooling in the eastern equatorial Pacific. However, as @zhang_economic_2017 argue, much of the research has focused on temperature and precipitation. @zhang_economic_2017 expands on this by incorporating additional predictors—relative humidity and wind speed—and concludes, using data from the Ministry of Agriculture of China, that these variables are important in understanding climate dynamics. 
 
-Temperatures significantly impact airport operations. Rising temperatures significantly affect aircraft performance, potentially leading to take-off weight restrictions and the need for longer runways. This directly impacts airport capacity and operations [@coffel_climate_2015]. Temperature forecast models vary in different locations, and different regions have unique climate characteristics that models may not fully capture [@american_meteorological_society_weather_nodate]. 
+Temperatures significantly impact airport operations. Rising temperatures significantly affect aircraft performance, leading to take-off weight restrictions and the need for longer runways. This directly impacts airport capacity and operations [@coffel_climate_2015]. Temperature forecast models vary in different locations, and different regions have unique climate characteristics that models may not fully capture [@american_meteorological_society_weather_nodate]. 
 
 This research paper aims to identify the factors influencing temperature at Vancouver International Airport and build a model for temperature prediction with the data obtained from @canadian_centre_for_climate_services_adjusted_2022 and @meteorological_service_of_canada_past_2023. Located on the west coast of Richmond, the airport sits on Sea Island, surrounded by water. As a transportation hub for passengers and freight, it is important to assess the location's safety in a warming climate.
 
@@ -357,7 +357,7 @@ This polynomial linear regression model predicts the log-transformed mean temper
 
 The model introduces non-linear relationships by including polynomial terms up to the second degree (quadratic) for each predictor. 
 
-## MLR Model
+## MLR Polynomial Model
 
 The Model LP is mathematically expressed as:
 
@@ -392,7 +392,7 @@ Where:
 3. **Residual Error ($\epsilon$):**
    - Represents the variation in the log-transformed mean temperature that is not explained by the predictors.
 
-The purpose of including polynomial terms in this model is to capture non-linear relationships between the predictors and the response variable, allowing the model to fit more complex, curved patterns that a purely linear model cannot accommodate. By incorporating quadratic terms for each predictor, the model gains flexibility in representing real-world data relationships, reducing bias, and addressing systematic patterns in residuals that may indicate non-linearity. This enhances the model's predictive performance, making it capable of explaining variance that would otherwise remain unaccounted for in a simple linear regression, while still maintaining the interpretability and simplicity of a linear regression framework.
+The purpose of including polynomial terms in this model is to capture non-linear relationships between the predictors and the response variable, allowing the model to fit more complex, curved patterns that a purely linear model cannot accommodate. This enhances the model's predictive performance, making it capable of explaining variance that would otherwise remain unaccounted for in a simple linear regression, while still maintaining the interpretability and simplicity of a linear regression framework.
 
 ### Model Validation {#sec-validation}
 
@@ -480,9 +480,9 @@ kable(results)
 
 The decision to use a linear regression model with polynomial terms for this analysis is grounded in the need to capture non-linear relationships between the predictors and the log-transformed mean temperature (log_mean_temp). Initial exploratory data analysis and diagnostic plots indicated that the relationships between the predictors, such as log-transformed wind speed, pressure, total precipitation, and gust speed, and the response variable were not strictly linear. Applying second-degree polynomial terms allows the model to account for curvature and interactions within the data while maintaining interpretability.
 
-The polynomial linear regression model was selected over alternative non-linear methods due to its balance between complexity and simplicity. Polynomial terms extend the linear model's capacity to capture non-linear patterns while preserving the interpretability of regression coefficients. The inclusion of transformations, such as logarithmic and Box-Cox, further improves the model by addressing issues of skewness and heteroscedasticity observed in the raw data.
+The polynomial linear regression model was selected over alternative non-linear methods due to its balance between complexity and simplicity. Polynomial terms extend the linear model's capacity to capture non-linear patterns while preserving the interpretability of regression coefficients. The inclusion of transformations, such as logarithmic and Box-Cox, further improves the model by addressing issues of skewness and heteroscedasticity observed in the raw data.  By incorporating quadratic terms for each predictor, the model gains flexibility in representing real-world data relationships, reducing bias, and addressing systematic patterns in residuals that may indicate non-linearity. 
 
-Finally, the model assumptions were rigorously evaluated in @sec-validation. Residual plots confirmed that the linearity assumption was largely met, while the Scale-Location plot and diagnostic tests supported the homoscedasticity of residuals. Variance Inflation Factor (VIF) values for the predictors were all well below the critical threshold, indicating no significant multicollinearity. These results ensure that the model remains valid and reliable for inference and prediction.
+Finally, the model assumptions were evaluated in @sec-validation. Residual plots confirmed that the linearity assumption was largely met, while the Scale-Location plot and diagnostic tests supported the homoscedasticity of residuals. Variance Inflation Factor (VIF) values for the predictors were all well below the critical threshold, indicating no significant multicollinearity. These results ensure that the model remains valid and reliable for inference and prediction.
 
 # Results
 
@@ -512,10 +512,41 @@ The Box-Cox transformed total precipitation has the strongest impact on $\log(\t
 ## Gust Speed: Decreases Temperature but Shows Curvature
 The first-degree term for log-transformed gust speed ($\text{poly(log\_gust\_speed, 2)1}$) has a negative coefficient of **-0.980**, showing that increasing gust speed reduces $\log(\text{mean\_temp})$. However, the second-degree term ($\text{poly(log\_gust\_speed, 2)2}$) has a positive coefficient of **0.347**, suggesting a minor curvature in the relationship where the negative effect is less pronounced at higher gust speeds.
 
-## Model Metrics: Explains 61% Variance with Low RMSE
+## Model Metrics: Explains 61% Variance with Low RMSE {#sec-result-r2}
 The model explains a significant portion of the variance in $\log(\text{mean\_temp})$, as indicated by an $R^2$ value of **0.610** and an adjusted $R^2$ of **0.603**. These values demonstrate that approximately 61% of the variability in $\log(\text{mean\_temp})$ is explained by the predictors, even after accounting for the complexity of the model.
 
 The model has a low RMSE of **0.12**, indicating accurate predictions with minimal average error. The AIC (**-601.2**) and BIC (**-560.6**) values suggest a strong fit compared to alternative models.
+
+## Predicted vs. Actual Plot shows good overall fit
+
+```{r}
+#| label: fig-predictedvsfit
+#| fig-cap: Predicted vs. Actual plot shows good fit
+#| fig-subcap: ['The model is accurate in the train data', 'The model is accurate in the test data']
+#| echo: false
+#| warning: false
+#| layout-ncol: 2
+#| 
+train_data$predicted <- predict(glm, newdata = train_data)
+test_data$predicted <- predict(glm, newdata = test_data)
+
+ggplot(train_data, aes(x = log_mean_temp, y = predicted)) +
+  geom_point(alpha = 0.6) +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Predicted vs Actual Log Mean Temperature",
+       x = "Actual Log Mean Temperature",
+       y = "Predicted Log Mean Temperature") +
+  theme_minimal()
+ggplot(test_data, aes(x = log_mean_temp, y = predicted)) +
+  geom_point(alpha = 0.6) +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Predicted vs Actual Log Mean Temperature",
+       x = "Actual Log Mean Temperature",
+       y = "Predicted Log Mean Temperature") +
+  theme_minimal()
+```
+
+As displayed in @fig-predictedvsfit, points aligning closely along the diagonal line indicate that the predicted log-transformed mean temperature matches well with the observed values. In @fig-predictedvsfit-1, The points closely align along the red diagonal line, indicating that the model predictions are highly accurate for the training dataset. This alignment suggests that the model captures the relationship between the predictors and the log-transformed mean temperature effectively, with minimal bias or variance issues within the training data. In @fig-predictedvsfit-2, the points on the test data plot also align reasonably well along the red diagonal line, though with slightly more scatter compared to the training data. This result indicates that the model generalizes well to unseen data, maintaining good predictive accuracy and avoiding overfitting. The consistency between the train and test plots suggests the model has a good balance between complexity and generalization. In summary, the Predicted vs. Actual plots provide clear visual evidence of the model's accuracy and robustness for both training and test datasets.
 
 
 # Discussion
@@ -526,22 +557,23 @@ This polynomial regression model captures non-linear relationships between predi
 
 
 ## The finding does not agree with Visser
+
+
 ## the finding does match with Wills
 
-Please don't use these as sub-heading labels - change them to be what your point actually is.
 
-## Third discussion point
 
 ## Weaknesses and next steps
 
 ### Limitations on the Model LP
 
 While the polynomial linear regression model captures much of the relationship between the predictors and the log-transformed mean temperature, some limitations remain. @fig-assumption-1 indicates that the relationship is not completely linear, with minor deviations suggesting that the model may not fully account for certain non-linearities. Additionally, @fig-assumption-3 shows slight evidence of heteroscedasticity at the extreme fitted values, indicating that the variance of residuals is not entirely constant. These limitations suggest that the model could benefit from further refinement, such as applying additional transformations, exploring interaction terms, or using alternative techniques like weighted least squares or robust regression to address potential heteroscedasticity. 
-Weaknesses and next steps should also be included.
 
 ### Limitation on the Response Mean Temperature
 
 ### Limitation on only researching temperature
+
+### Limitation on ECCC's methodology
 
 \newpage
 
