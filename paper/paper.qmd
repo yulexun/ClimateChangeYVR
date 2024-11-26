@@ -1,15 +1,16 @@
 ---
-title: "My title"
-subtitle: "My subtitle if needed"
+title: "Non-Linear Effects of Pressure, Precipitation, Wind, and Gust Speed on Temperature at Vancouver International Airport"
+subtitle: "A Polynomial Regression Approach to Analyzing Atmospheric Influences on Temperature"
 author: 
   - Lexun Yu
 thanks: "Code and data are available at: [https://github.com/yulexun/ClimateChangeYVR](https://github.com/yulexun/ClimateChangeYVR)."
 date: today
 date-format: long
-abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
+abstract: "This study investigates how atmospheric factors influence temperature at Vancouver International Airport using a polynomial regression model. The analysis reveals that total precipitation has the strongest effect, significantly reducing mean temperature, while wind speed and atmospheric pressure exhibit non-linear and consistent negative impacts, respectively. By explaining 61% of the variability in temperature, the model demonstrates that precipitation, pressure, gust speed and wind speed are key drivers of regional climate patterns. Understanding these relationships helps inform climate adaptation strategies for critical infrastructure, including airports, in a warming world."
 format: pdf
 number-sections: true
 bibliography: references.bib
+toc: true
 ---
 
 ```{r}
@@ -50,14 +51,14 @@ Temperatures significantly impact airport operations. Rising temperatures signif
 
 This research paper aims to identify the factors influencing temperature at Vancouver International Airport and build a model for temperature prediction with the data obtained from @canadian_centre_for_climate_services_adjusted_2022 and @meteorological_service_of_canada_past_2023. Located on the west coast of Richmond, the airport sits on Sea Island, surrounded by water. As a transportation hub for passengers and freight, it is important to assess the location's safety in a warming climate.
 
+The estimand in this study is the effect of atmospheric variables—wind speed, atmospheric pressure, total precipitation, and gust speed—on the mean temperature at Vancouver International Airport. The goal is to quantify these relationships and predict temperature variations using a polynomial regression model. To account for the non-linear and skewed nature of the data, transformations such as logarithmic and Box-Cox methods were applied to both predictors and the response variable. The estimand reflects how changes in these atmospheric conditions influence log-transformed mean temperature over time.
 
-Estimand paragraph
+The results indicate that total precipitation is the most influential predictor, showing a strong inverse relationship with mean temperature. Wind speed and gust speed demonstrate non-linear effects, with moderate increases associated with temperature rises and higher values contributing to cooling. Pressure consistently exhibits a negative association with temperature, with amplified effects at extreme levels. The model explains 61% of the variance in mean temperature and performs well in validation, showing minimal overfitting and low prediction error. These results highlight the role of atmospheric variables in regional temperature changes and the effectiveness of the polynomial regression approach in capturing complex relationships.
 
-Results paragraph
+The remainder of this paper is structured as follows: @sec-data provides an overview of the data. @sec-model provides the modeling approach of multiple linear regression with polynomial transformation. We then present our results in @sec-result and discuss the implications, limitations, and future research directions in @sec-discussion.
 
-Telegraphing paragraph: The remainder of this paper is structured as follows. @sec-data....
+The data gathering and analysis is done in R [@citeR] with the following packages: knitr [@knitr], tidyverse [@tidyverse], arrow [@arrow], here [@here], corrplot [@corrplot], kableExtra [@kableExtra], car [@car], modelsummary [@modelsummary], brms [@brms], Metrics [@Metrics].
 
-The data gathering and analysis is done in R [@citeR] with the following packages: knitr [@knitr], tidyverse [@tidyverse], ggplot2 [@ggplot2], dplyr [@dplyr], arrow [@arrow], here [@here], and lubridate [@lubridate].
 
 # Data {#sec-data}
 
@@ -357,6 +358,8 @@ This polynomial linear regression model predicts the log-transformed mean temper
 
 The model introduces non-linear relationships by including polynomial terms up to the second degree (quadratic) for each predictor. 
 
+The model is fitted with R [@citeR], the Bayesian Model in @sec-model-detail is built using brms [@brms] and rstanarm [@rstanarm]. 
+
 ## MLR Polynomial Model
 
 The Model LP is mathematically expressed as:
@@ -471,10 +474,6 @@ results <- data.frame(
 kable(results)
 ```
 
-```{r}
-
-```
-
 
 ### Model Justification 
 
@@ -484,40 +483,68 @@ The polynomial linear regression model was selected over alternative non-linear 
 
 Finally, the model assumptions were evaluated in @sec-validation. Residual plots confirmed that the linearity assumption was largely met, while the Scale-Location plot and diagnostic tests supported the homoscedasticity of residuals. Variance Inflation Factor (VIF) values for the predictors were all well below the critical threshold, indicating no significant multicollinearity. These results ensure that the model remains valid and reliable for inference and prediction.
 
-# Results
+# Results {#sec-result}
 
-Our results are summarized in @tbl-modelresults.
+Our results are summarized in @tbl-modelresults, which displays the estimate, standard error, and p-value for each coefficient.
 
 ```{r}
 #| label: tbl-modelresults
 #| tbl-cap: Summary of Model LP
 #| echo: false
 #| warning: false
-modelsummary(glm)
+modelsummary(glm, statistic = c("Std. Error" = "std.error", "p-value" = "p.value"))
 ```
 
-## Intercept Indicates a Strong Baseline In Temperature
+## Coefficients
+@fig-coefficients illustrates the estimated coefficients for the polynomial regression model, along with their 95% confidence intervals. Positive coefficients indicate predictors that increase the log-mean temperature, while negative coefficients represent predictors associated with a decrease, with confidence intervals crossing zero suggesting lower statistical significance.
+
+```{r}
+#| label: fig-coefficients
+#| fig-cap: Intercept Indicates a Strong Baseline (95% CI)
+#| echo: false
+#| warning: false
+
+coefs <- broom::tidy(glm, conf.int = TRUE)
+# Rename terms for better readability
+coefs$term <- gsub("poly\\(log_wind_speed, 2\\)", "Wind Speed (Poly)", coefs$term)
+coefs$term <- gsub("poly\\(log_pressure, 2\\)", "Pressure (Poly)", coefs$term)
+coefs$term <- gsub("poly\\(total_precipitation_boxcox, 2\\)", "Precipitation (Poly)", coefs$term)
+coefs$term <- gsub("poly\\(log_gust_speed, 2\\)", "Gust Speed (Poly)", coefs$term)
+
+ggplot(coefs, aes(x = term, y = estimate, ymin = conf.low, ymax = conf.high)) +
+  geom_pointrange() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  coord_flip() +  # Flip the axes for better readability
+  labs(
+    title = "Coefficient Estimates with Confidence Intervals",
+    x = "Predictor Terms",
+    y = "Estimate"
+  ) +
+  theme_minimal()
+```
+
+### Intercept Indicates a Strong Baseline In Temperature
 
 The intercept of the model is estimated at **3.899**, representing the predicted value of the log-transformed mean temperature when all predictors are at their mean (after centering and scaling in the polynomial terms). This value serves as the baseline against which the effects of all predictors are measured. A significant intercept indicates the model reliably predicts the baseline log-mean temperature.
 
-## Wind Speed: Non-Linear Increase and Decline in Temperature
+### Wind Speed: Non-Linear Increase and Decline in Temperature
 The first-degree polynomial term for log-transformed wind speed ($\text{poly(log\_wind\_speed, 2)1}$) has a positive coefficient of **0.260**, suggesting that increasing wind speed is associated with a slight increase in $\log(\text{mean\_temp})$. However, the second-degree term ($\text{poly(log\_wind\_speed, 2)2}$) has a negative coefficient of **-0.449**, indicating a reversing effect at higher wind speeds. This quadratic relationship reflects non-linear relationships between wind speed and temperature.
 
-## Atmospheric Pressure: Consistent Negative Impact on Temperature
+### Atmospheric Pressure: Consistent Negative Impact on Temperature
 Log-transformed atmospheric pressure shows a consistently negative relationship with $\log(\text{mean\_temp})$. The first-degree term ($\text{poly(log\_pressure, 2)1}$) has a coefficient of **-0.388**, and the second-degree term ($\text{poly(log\_pressure, 2)2}$) is more negative at **-0.973**. This indicates that higher atmospheric pressure is associated with a reduction in $\log(\text{mean\_temp})$, and the quadratic term amplifies this effect, particularly at extreme values of pressure.
 
-## Total Precipitation: The Strongest Negative Effect
+### Total Precipitation: The Strongest Negative Effect
 The Box-Cox transformed total precipitation has the strongest impact on $\log(\text{mean\_temp})$ among all predictors. The first-degree term ($\text{poly(total\_precipitation\_boxcox, 2)1}$) has a significant negative coefficient of **-2.016**, implying that higher precipitation reduces $\log(\text{mean\_temp})$ substantially. The second-degree term ($\text{poly(total\_precipitation\_boxcox, 2)2}$) is positive at **0.218**, indicating a slight mitigation of this negative effect at extreme precipitation levels.
 
-## Gust Speed: Decreases Temperature but Shows Curvature
+### Gust Speed: Decreases Temperature but Shows Curvature
 The first-degree term for log-transformed gust speed ($\text{poly(log\_gust\_speed, 2)1}$) has a negative coefficient of **-0.980**, showing that increasing gust speed reduces $\log(\text{mean\_temp})$. However, the second-degree term ($\text{poly(log\_gust\_speed, 2)2}$) has a positive coefficient of **0.347**, suggesting a minor curvature in the relationship where the negative effect is less pronounced at higher gust speeds.
 
-## Model Metrics: Explains 61% Variance with Low RMSE {#sec-result-r2}
+### Model Metrics: Explains 61% Variance with Low RMSE {#sec-result-r2}
 The model explains a significant portion of the variance in $\log(\text{mean\_temp})$, as indicated by an $R^2$ value of **0.610** and an adjusted $R^2$ of **0.603**. These values demonstrate that approximately 61% of the variability in $\log(\text{mean\_temp})$ is explained by the predictors, even after accounting for the complexity of the model.
 
 The model has a low RMSE of **0.12**, indicating accurate predictions with minimal average error. The AIC (**-601.2**) and BIC (**-560.6**) values suggest a strong fit compared to alternative models.
 
-## Predicted vs. Actual Plot shows good overall fit
+## Predicted vs. Actual Plot shows consistent performance of the model
 
 ```{r}
 #| label: fig-predictedvsfit
@@ -546,24 +573,42 @@ ggplot(test_data, aes(x = log_mean_temp, y = predicted)) +
   theme_minimal()
 ```
 
-As displayed in @fig-predictedvsfit, points aligning closely along the diagonal line indicate that the predicted log-transformed mean temperature matches well with the observed values. In @fig-predictedvsfit-1, The points closely align along the red diagonal line, indicating that the model predictions are highly accurate for the training dataset. This alignment suggests that the model captures the relationship between the predictors and the log-transformed mean temperature effectively, with minimal bias or variance issues within the training data. In @fig-predictedvsfit-2, the points on the test data plot also align reasonably well along the red diagonal line, though with slightly more scatter compared to the training data. This result indicates that the model generalizes well to unseen data, maintaining good predictive accuracy and avoiding overfitting. The consistency between the train and test plots suggests the model has a good balance between complexity and generalization. In summary, the Predicted vs. Actual plots provide clear visual evidence of the model's accuracy and robustness for both training and test datasets.
+As displayed in @fig-predictedvsfit, the predicted vs. actual plots for both the training and test datasets demonstrate a strong alignment along the diagonal. In @fig-predictedvsfit-1, The points closely align along the red diagonal line, indicating that the model predictions are highly accurate for the training dataset. In @fig-predictedvsfit-2, the test dataset shows a comparable trend, with predictions aligning well with actual values, suggesting the model generalizes effectively to unseen data. These results confirm that the model provides a good fit for the response variable in both datasets.
 
+## P-value
 
-# Discussion
+In @tbl-modelresults, the p-value in regression results reveal that several coefficients are statistically significant at the 0.05 level, and all coefficients are significant at the 0.1 level. The intercept and terms for the second-degree polynomials of log_pressure and total_precipitation_boxcox are highly significant (p < 0.001). Similarly, the second-degree term of log_gust_speed (p = 0.00496) and the first-degree term of log_pressure (p = 0.00337) are significant at the 0.01 level. Marginal significance is observed for the first-degree terms of log_wind_speed (p = 0.0721) and total_precipitation_boxcox (p = 0.0716).
 
-## Summary of Results: Precipitation Leads, While Wind and Pressure Add Complexity {#sec-first-point}
+# Discussion {#sec-discussion}
 
-This polynomial regression model captures non-linear relationships between predictors and $\log(\text{mean\_temp})$ effectively, with total precipitation exerting the strongest influence. Wind speed and gust speed contribute with both positive and negative effects, depending on the quadratic curvature. Atmospheric pressure consistently shows a negative impact. Despite its strengths, slight evidence of heteroscedasticity and non-linear residual patterns observed in diagnostic plots suggest that future refinements, such as interaction terms or alternative modeling techniques, could improve the model's performance.
+This paper examines the factors influencing mean temperature at Vancouver International Airport using data collected from Environment and Climate Change Canada. A polynomial regression model was developed to predict log-transformed mean temperature based on atmospheric predictors, including wind speed, atmospheric pressure, total precipitation, and gust speed. These variables were transformed using logarithmic or Box-Cox methods to stabilize variance and address non-linearity in their relationships with temperature.
 
+The analysis included detailed data preparation, combining raw observational datasets with adjusted and homogenized climate data. The dataset was cleaned, standardized, and split into training and test groups to ensure robust model validation. Exploratory data analysis identified skewness and zero inflation in several predictors, necessitating transformations for improved model suitability.
 
-## The finding does not agree with Visser
+The study focused on building and validating a polynomial regression model. By incorporating quadratic terms for all predictors, the model captured non-linear relationships and explained 61% of the variance in mean temperature. Model performance was evaluated through diagnostic tests, residual analysis, and comparisons of predicted versus actual values. Metrics such as RMSE confirmed the model's accuracy and generalizability to unseen data.
 
+## Summary of Results
+### Precipitation Leads, While Wind and Pressure Add Complexity {#sec-first-point}
 
-## the finding does match with Wills
+This study identified total precipitation as the strongest predictor of temperature variation, demonstrating a robust inverse relationship with mean temperature. The analysis revealed that wind speed and gust speed have non-linear effects, with the direction and magnitude of their impact dependent on the quadratic terms included in the model. Atmospheric pressure consistently reduced temperature, with the quadratic term further emphasizing this effect at extreme levels of pressure. The inclusion of polynomial terms allowed the model to address curvatures in relationships that linear terms alone could not capture. The model performed well, explaining 61% of the variance and maintaining its accuracy across training and test datasets. The relatively low RMSE confirms the model's ability to approximate observed temperatures effectively.
 
+These results reflect the complexity of meteorological interactions influencing temperature. While total precipitation emerged as the dominant factor, the nuanced roles of wind and pressure underscore the importance of considering multiple predictors simultaneously. Together, these variables reflect the dynamics influencing temperature at Vancouver International Airport (YVR).
 
+### Non-Linear Effects of Atmospheric Predictors on Temperature
+The study highlights a non-linear relationship between predictors, such as wind speed, and mean temperature. For instance, at moderate wind speeds, the findings suggest a slight increase in temperature, potentially due to enhanced mixing of atmospheric layers that can bring warmer air from aloft. However, as wind speed increases further, its effect reverses, leading to a decrease in temperature. This could be attributed to the cooling influence of stronger winds dispersing heat more effectively or increasing evaporation rates. These findings suggest the importance of accounting for non-linear effects in predictive climate models, as linear assumptions would overlook such complex dynamics. Further research could explore how wind speed interacts with other variables, such as humidity or surface characteristics, to influence temperature.
 
-## Weaknesses and next steps
+### Dominance of Precipitation in Predicting Temperature Variation
+
+The analysis identifies precipitation as the most influential factor in predicting temperature changes, with a strong inverse relationship observed. This result is consistent with the idea that precipitation events often coincide with increased cloud cover, which limits solar radiation and leads to cooler surface temperatures. Additionally, evaporative cooling during and after precipitation events may further contribute to this effect. The quadratic nature of the precipitation term suggests diminishing effects at extreme levels, which could reflect saturation in cooling mechanisms or localized anomalies in precipitation patterns. These findings emphasize the critical role of hydrological processes in modulating regional climate and provide a basis for refining climate prediction models to incorporate precipitation variability more effectively.
+
+## Comparing with Previous Studies
+### Our finding does not aligh with Visser
+The findings diverge from the work of @visser_eliminating_2021, who identified a positive association between precipitation intensity and temperature in Australia. This contrast highlights the importance of regional climatic differences and suggests that factors such as geographic features, prevailing weather patterns, and local topography may alter these relationships. For example, Vancouver's coastal climate likely moderates precipitation's impact on temperature compared to Australia's arid and semi-arid conditions.
+
+### Our finding align with Wills
+Our results align with @wills_systematic_2022, who identified atmospheric pressure as a cooling factor in equatorial Pacific regions. This consistency reinforces the broader applicability of pressure-temperature relationships in diverse climatic contexts. The agreement with Wills suggests that pressure effects may operate at larger spatial scales, transcending localized conditions.
+
+## Weaknesses and Future Directions
 
 ### Limitations on the Model LP
 
@@ -571,9 +616,31 @@ While the polynomial linear regression model captures much of the relationship b
 
 ### Limitation on the Response Mean Temperature
 
+The use of mean temperature as the sole response variable, though practical, limits the insights gained. Mean temperature smooths out extremes, thereby overlooking critical information about temperature variability. Extremes, such as maximum and minimum temperatures, play a large role in understanding climate impacts, particularly in terms of heatwaves or freezing conditions. 
+
+Future research could expand the scope of the analysis to include a range of temperature metrics. Analyzing temperature extremes or variability measures, such as diurnal temperature range or seasonal deviations, would provide a richer understanding of atmospheric influences on climate. Incorporating additional response variables could also reveal interactions between predictors that are not apparent when analyzing mean temperature alone.
+
 ### Limitation on only researching temperature
 
+As @coffel_climate_2015 discussed, using mean temperature as the sole response variable, while valuable for general climate modeling, presents limitations when assessing airport safety. Aviation safety is influenced not just by average temperature but also by its variability, particularly extremes that can significantly impact operations. For example, high maximum temperatures reduce air density, affecting aircraft lift during takeoff. Similarly, low minimum temperatures can lead to ice formation on runways and aircraft surfaces, posing safety hazards. Atmospheric conditions that affect aviation, such as wind speed and sea level pressure, are not captured by mean temperature alone. These variables are directly tied to operational challenges and safety considerations.
+
+For instance, wind speed is a major factor in airport operations, influencing takeoff, landing, and overall flight stability. Sudden changes in wind speed or direction, including gusts and crosswinds, can compromise safety and require adjustments in scheduling and runway usage. Analyzing wind speed alongside temperature would provide a better understanding of the conditions that lead to unsafe situations.
+
+Sea level pressure is another important variable, affecting aircraft performance and weather systems. Variations in pressure can lead to storms, precipitation, or clear but frigid conditions that impact runway conditions and aircraft operation. Low-pressure systems often bring strong winds and poor visibility, while high-pressure systems can lead to temperature extremes that influence infrastructure and fuel performance.
+
+Including wind speed and sea level pressure in future analyses would enhance the ability to assess and predict conditions relevant to airport safety. These variables are fundamental to the aviation sector and provide a more detailed view of the atmospheric dynamics that affect operations. Addressing these factors would align the study with the needs of airport safety management and planning.
+
 ### Limitation on ECCC's methodology
+The reliance on Environment and Climate Change Canada (ECCC) adjusted and homogenized climate data introduces methodological constraints. While these datasets are extensively quality-controlled, they are subject to adjustments for station relocations, instrument changes, and missing data imputation as discussed in @sec-methodology. Such adjustments, while necessary, could obscure trends or introduce biases that might not reflect actual climate conditions. This is especially relevant when studying localized phenomena where raw observational data might reveal finer-scale variations.
+
+To address these concerns, future research could compare adjusted datasets with raw, unprocessed data. Integrating alternative data sources, such as satellite-derived measurements or high-resolution reanalysis products, might complement the ECCC data and provide a more nuanced perspective. Furthermore, temporal limitations of the dataset, such as monthly aggregation, restrict the analysis of short-term weather events. Employing higher temporal resolution data, such as hourly or daily measurements, would allow for a detailed examination of precipitation and temperature interactions over shorter time scales.
+
+### Potential Directions for Expanded Analysis
+Expanding this research to include airports in different regions around the world would provide a broader understanding of how various factors influence airport safety. Airports operate in different climatic and geographic conditions such as coastal locations and high-altitude terrains, have unique challenges influenced by local weather patterns. Investigating these variations could reveal patterns and trends that are not observable when focusing on Vancouver's airport.
+
+For instance, airports in tropical regions might experience high wind speeds and pressure fluctuations due to frequent storms, whereas those in colder regions are more likely to face challenges related to low temperatures and ice. Conducting similar analyses at airports in different environments could show how predictors like wind speed, sea level pressure, and temperature interact under different climatic regimes.
+
+Additionally, comparing airports with varying altitudes and proximity to water would allow researchers to explore the role of geographical features in modifying atmospheric conditions. For example, high-altitude airports may be more affected by low atmospheric pressure, while coastal airports might experience more significant impacts from wind and precipitation variability.
 
 \newpage
 
@@ -691,7 +758,7 @@ The prior distributions for the parameters are:
 
   indicating prior uncertainty about the baseline log-mean temperature.
 
-The model was fit using the `brms` package @brm. It uses:
+The model was fit using the `brms` package [@brms]. It uses:
 
 - 4 chains for convergence,
 - 2000 iterations per chain to ensure stability, 
@@ -934,12 +1001,6 @@ Non-response, such as gaps in the data due to missing records, is managed by emp
 The AHCCD by @dunbar_adjusted_2020 provides long-term, high-quality climate records adjusted for non-climatic factors such as changes in instrumentation, observation procedures, and station relocations, ensuring consistency and reliability for trend analysis in climate change.  
 
 The documentation acknowledges the possibility of missing values, which naturally arise in long-term observational datasets due to factors such as station interruptions, relocation, or equipment malfunctions [@environment_and_climate_change_canada_adjusted_2021]. Moreover, the dataset’s coverage in Arctic regions is limited to the restricted to the mid-1940s to present, as this limitation reflects the historical absence of earlier systematic observations in these remote regions. 
-
-# Posterior predictive check
-
-In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. This shows...
-
-In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
 
 \newpage
 
