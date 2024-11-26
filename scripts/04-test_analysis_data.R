@@ -24,12 +24,15 @@ test_that("Simulated dataset has correct structure", {
   expect_equal(nrow(cleaned_data), 610)
 
   # Test the number of columns
-  expect_equal(ncol(cleaned_data), 10)
+  expect_equal(ncol(cleaned_data), 20)
 
   # Test the column names
   expected_colnames <- c(
     "date", "wind_speed", "total_precipitation", "snow", "pressure_station",
-    "max_temp", "min_temp", "mean_temp", "total_rain", "gust_speed_km_h"
+    "max_temp", "min_temp", "mean_temp", "total_rain", "gust_speed_km_h",
+    "mean_temp_F", "log_mean_temp", "log_total_precipitation", "log_gust_speed",
+    "mean_temp_f_adj", "total_precipitation_adj", "gust_speed_adj", "log_wind_speed",
+    "log_pressure", "total_precipitation_boxcox"
   )
   expect_equal(colnames(cleaned_data), expected_colnames)
 })
