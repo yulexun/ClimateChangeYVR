@@ -26,6 +26,7 @@ library(kableExtra)
 library(car)
 library(modelsummary)
 library(brms)
+library(Metrics)
 
 raw_data_climate <- read_csv(here("data/01-raw_data/climateyvr.csv"))
 raw_data_ahccd <- read_csv(here("data/01-raw_data/ahccdyvr.csv"))
@@ -439,12 +440,11 @@ kable(vif_values)
 
 We validate our Model LP with test data to evaluate the model's generalizability and performance on unseen data. 
 
-The R2 value calculated on the test data ($R^2 = 0.59$) is very close to the R2 value of the model on the training data ($R^2 = 0.61$), as discussed in @sec-result-r2 This similarity indicates that the model generalizes well to unseen data, as its performance on the test set is consistent with its performance during training. The small difference between the two R2 values suggests that the model is not overfitting the training data and captures the underlying relationships in the data effectively.
-
+The R2 value calculated on the test data ($R^2 = 0.59$) is very close to the R2 value of the model on the training data ($R^2 = 0.61$), as discussed in @sec-result-r2 This similarity indicates that the model generalizes well to unseen data, as its performance on the test set is consistent with its performance during training. The training MSE of 0.0137 and test MSE of 0.0158 indicate the model performs well on both datasets with minimal overfitting. The The small difference between the two R2 values and the small difference between the errors suggests good generalization to unseen data.
 
 ```{r}
 #| label: tbl-test-validate
-#| tbl-cap: R2 value on test data is close to train data
+#| tbl-cap: R2 and MSE value on test data is close to train data
 #| echo: false
 #| warning: false
 
@@ -453,12 +453,26 @@ SSR <- sum((test_data$log_mean_temp - test_data$predicted)^2)  # Sum of Squared 
 TSS <- sum((test_data$log_mean_temp - mean(test_data$log_mean_temp))^2)  # Total Sum of Squares
 R2 <- 1 - (SSR / TSS)
 R2T <- summary(glm)$r.squared
+
+train_predictions <- predict(glm, newdata = train_data)
+test_predictions <- predict(glm, newdata = test_data)
+
+y_train <- train_data$log_mean_temp
+y_test <- test_data$log_mean_temp
+
+mse_train <- mse(y_train, train_predictions)
+mse_test <- mse(y_test, test_predictions)
+
 results <- data.frame(
-  Metric = c("SSR", "TSS", "R2", "R2-Train"),
-  Value = c(SSR, TSS, R2, R2T)
+  Metric = c("SSR", "TSS", "R2", "R2-Train", "MSE-Train", "MSE-Test"),
+  Value = c(SSR, TSS, R2, R2T, mse_train, mse_test)
 )
 
 kable(results)
+```
+
+```{r}
+
 ```
 
 
