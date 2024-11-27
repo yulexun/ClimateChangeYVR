@@ -1,6 +1,6 @@
 ---
-title: "Non-Linear Effects of Pressure, Precipitation, Wind, and Gust Speed on Temperature at Vancouver International Airport"
-subtitle: "A Polynomial Regression Approach to Analyzing Atmospheric Influences on Temperature"
+title: "Exploring Nonlinear Atmospheric Influences on Temperature Using Polynomial Regression at Vancouver International Airport"
+subtitle: "Pressure and Wind as Key Drivers of Temperature Variability, with Limited Impact from Precipitation and Gust Speed"
 author: 
   - Lexun Yu
 thanks: "Code and data are available at: [https://github.com/yulexun/ClimateChangeYVR](https://github.com/yulexun/ClimateChangeYVR)."
@@ -53,7 +53,9 @@ This research paper aims to identify the factors influencing temperature at Vanc
 
 The estimand in this study is the effect of atmospheric variables, such as wind speed, atmospheric pressure, total precipitation, and gust speed, on the mean temperature at Vancouver International Airport. The goal is to quantify these relationships and predict temperature variations using a polynomial regression model. To account for the non-linear and skewed nature of the data, transformations such as logarithmic and Box-Cox methods were applied to both predictors and the response variable. The estimand reflects how changes in these atmospheric conditions influence log-transformed mean temperature over time. 
 
-The results indicate that total precipitation is the most influential predictor, showing a strong inverse relationship with mean temperature. Wind speed and gust speed demonstrate non-linear effects, with moderate increases associated with temperature rises and higher values contributing to cooling. Pressure consistently exhibits a negative association with temperature, with amplified effects at extreme levels. The model explains 61% of the variance in mean temperature and performs well in validation, showing minimal overfitting and low prediction error. These results highlight the role of atmospheric variables in regional temperature changes and the effectiveness of the polynomial regression approach in capturing complex relationships. 
+The results indicate that total precipitation is the most influential predictor, showing a strong inverse relationship with mean temperature. Wind speed and gust speed demonstrate non-linear effects, with moderate increases associated with temperature rises and higher values contributing to cooling. Pressure consistently exhibits a negative association with temperature, with amplified effects at extreme levels. The model explains 61% of the variance in mean temperature and performs well in validation, showing minimal overfitting and low prediction error. 
+
+These results highlight the role of atmospheric variables in regional temperature changes and the effectiveness of the polynomial regression approach in capturing complex relationships. Our findings contribute to a deeper understanding of regional climate changes, which is important for decision-making and resilience planning in an important nodes in global transportation and logistics, where temperature fluctuations directly influence operational efficiency, safety, and infrastructure planning.
 
 The remainder of this paper is structured as follows: @sec-data provides an overview of the data. @sec-model provides the modeling approach of multiple linear regression with polynomial transformation. We then present our results in @sec-result and discuss the implications, limitations, and future research directions in @sec-discussion.  
 
@@ -73,7 +75,7 @@ The limitations are documented in @sec-methodology.
 
 ## Raw Data 
 
-In this project, we focus on weather data from YVR Airport, extracting only the datasets containing measurements taken at this specific location from the database. In both datasets, each row corresponds to a single averaged observation for a specific month and year. Each entry includes climate information such as temperature and wind speed, with their respective units recorded alongside the values. Additionally, a unique station ID and geographic coordinates (x, y) are included at the beginning of each entry for reference. The column headers of the raw historical weather dataset is displayed in @tbl-raw-climate. The column headers of the AHCCD dataset is displayed in @tbl-raw-ahccd. 
+In this project, we focus on weather data from YVR Airport, extracting only the datasets containing measurements taken at this specific location from the database obtained from @canadian_centre_for_climate_services_adjusted_2022 and @meteorological_service_of_canada_past_2023. In both datasets, each row corresponds to a single averaged observation for a specific month and year. Each entry includes climate information such as temperature and wind speed, with their respective units recorded alongside the values. Additionally, a unique station ID and geographic coordinates (x, y) are included at the beginning of each entry for reference. The column headers of the raw historical weather dataset is displayed in @tbl-raw-climate. The column headers of the AHCCD dataset is displayed in @tbl-raw-ahccd. 
 
 ```{r}
 #| label: tbl-raw-climate
@@ -390,11 +392,11 @@ Where:
 
 The purpose of including polynomial terms in this model is to capture non-linear relationships between the predictors and the response variable, allowing the model to fit more complex, curved patterns that a purely linear model cannot accommodate. This enhances the model's predictive performance, making it capable of explaining variance that would otherwise remain unaccounted for in a simple linear regression, while still maintaining the interpretability and simplicity of a linear regression framework.
 
-### Model Validation {#sec-validation}
+## Model Validation {#sec-validation}
 
 The linear regression model was chosen to analyze the relationship between wind speed, atmospheric pressure, total precipitation, and gust speed with the log-transformed mean temperature. This model's main goal is to quantify each predictor's effect on the response variable and to make predictions. The linear model is suitable because the relationship between the predictors and the response variable was found to be linear after applying logarithmic and Box-Cox transformations to address non-linearity and skewness. 
 
-#### Assumptions Fit the Data
+### Assumptions Fit the Data
 
 ```{r}
 #| label: fig-assumption
@@ -432,7 +434,7 @@ vif_values <- vif(glm)
 kable(vif_values)
 ```
 
-#### Validation on Test Data
+### Validation on Test Data
 
 We validate our Model LP with test data to evaluate the model's generalizability and performance on unseen data. 
 
@@ -468,7 +470,7 @@ kable(results)
 ```
 
 
-### Model Justification 
+## Model Justification 
 
 The decision to use a linear regression model with polynomial terms for this analysis is grounded in the need to capture non-linear relationships between the predictors and the log-transformed mean temperature (log_mean_temp). Initial exploratory data analysis and diagnostic plots indicated that the relationships between the predictors, such as log-transformed wind speed, pressure, total precipitation, and gust speed, and the response variable were not strictly linear. Applying second-degree polynomial terms allows the model to account for curvature and interactions within the data while maintaining interpretability. 
 
