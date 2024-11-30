@@ -244,17 +244,8 @@ In @fig-hist-all, Transformations are also applied to Wind Speed, Pressure, Tota
 ```{r}
 #| label: fig-boxplot-snow
 #| fig-cap: Total Snow shows Zero Inflation
-#| fig-subcap: ['A Large Proportion of Observations With No Snowfall', 'Prevalence of Zero Values and a Skewed Pattern in the Non-zero Snowfall Measurements']
 #| echo: false
 #| warning: false
-#| layout-ncol: 2
-boxplot(analysis_data$snow,
-        horizontal = TRUE,
-        main = "Boxplot of Total Snow",
-        ylab = "Total Snow",
-        xlab = "Snow (in cm)", 
-        col = "lightblue",
-        notch = TRUE)
 
 ggplot(analysis_data, aes(x = snow)) +
   geom_histogram(fill = "red", color = "black", alpha = 0.7) +
