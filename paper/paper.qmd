@@ -431,7 +431,7 @@ Multicollinearity occurs when predictors are highly correlated, making it diffic
 #| warning: false
 
 # Calculate VIF
-vif_values <- vif(glm)
+vif_values <- round(vif(glm), 2)
 kable(vif_values)
 ```
 
@@ -462,10 +462,12 @@ y_test <- test_data$log_mean_temp
 mse_train <- mse(y_train, train_predictions)
 mse_test <- mse(y_test, test_predictions)
 
+
 results <- data.frame(
   Metric = c("SSR", "TSS", "R2", "R2-Train", "MSE-Train", "MSE-Test"),
   Value = c(SSR, TSS, R2, R2T, mse_train, mse_test)
 )
+results$Value <- round(results$Value, 2)
 
 kable(results)
 ```
@@ -866,6 +868,9 @@ metrics <- data.frame(
   RMSE = c(rmse_glm, rmse_brm),
   MAE = c(mae_glm, mae_brm)
 )
+
+metrics <- metrics %>%
+  mutate(RMSE = round(RMSE, 2), MAE = round(MAE, 2))
 
 # Display the table using kable
 kable(metrics) %>%
