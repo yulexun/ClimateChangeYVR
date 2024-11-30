@@ -437,9 +437,9 @@ kable(vif_values)
 
 ### Validation on Test Data
 
-We validate our Model LP with test data to evaluate the model's generalizability and performance on unseen data. 
+We validate our Model LP with test data to evaluate the model's generalizability and performance on unseen data The result is shown in @tbl-test-validate. 
 
-The R2 value calculated on the test data ($R^2 = 0.59$) is very close to the R2 value of the model on the training data ($R^2 = 0.61$), as discussed in @sec-result-r2 This similarity indicates that the model generalizes well to unseen data, as its performance on the test set is consistent with its performance during training. The training MSE of 0.0137 and test MSE of 0.0158 indicate the model performs well on both datasets with minimal overfitting. The small difference between the two R2 values and the small difference between the errors suggests good generalization to unseen data.
+The R2 value calculated on the test data ($R^2 = 0.59$) is very close to the R2 value of the model on the training data ($R^2 = 0.61$), as discussed in @sec-result-r2. This similarity indicates that the model generalizes well to unseen data, as its performance on the test set is consistent with its performance during training. The training MSE of 0.0137 and test MSE of 0.0158 indicate the model performs well on both datasets with minimal overfitting. The small difference between the two R2 values and the small difference between the errors suggests good generalization to unseen data.
 
 ```{r}
 #| label: tbl-test-validate
