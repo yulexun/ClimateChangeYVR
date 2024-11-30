@@ -71,7 +71,8 @@ According to the glossary published by @meteorological_service_of_canada_past_20
 
 For climate research, including climate change studies, @environment_and_climate_change_canada_adjusted_2021 has developed the Adjusted and Homogenized Canadian Climate Data (AHCCD) dataset. This dataset undergoes rigorous quality control and homogenization processes to address non-climatic factors that can affect long-term data consistency, such as station relocations or changes in instrumentation. The AHCCD ensures that observed trends reflect actual climate changes rather than artificial shifts in the data. In the AHCCD dataset, the precipitation, rain, pressure, snow, and wind speed are adjusted with models to account for missing data and other non-climate factors. The detailed adjustments and corrections are documented in @sec-methodology. For example, precipitation measurements, which are often underestimated, are adjusted to ensure accuracy, especially in regions like the Arctic [@environment_and_climate_change_canada_climate_2021-1]. In the AHCCD dataset, parameters measured are recorded with the units, date, station ids, location, and unique identifiers. The AHCCD data maintains a one-to-one correspondence with the historical weather dataset by a matching station id system, ensuring that each entry in the AHCCD aligns directly with a specific observation in the historical dataset.  
 
-The limitations are documented in @sec-methodology. 
+### Sources of Bias
+The dataset used in this study, derived from Environment and Climate Change Canada (ECCC) and the Canadian Centre for Climate Services contains adjustments and homogenization to ensure consistency and quality. Adjustments for factors such as station relocations, changes in measurement instruments, and the missing data can introduce localized variations that do not reflect natural atmospheric conditions. The detailed sources of bias and limitations are documented in @sec-methodology. 
 
 ## Raw Data 
 
@@ -646,7 +647,16 @@ The reliance on Environment and Climate Change Canada (ECCC) adjusted and homoge
 
 To address these concerns, future research could compare adjusted datasets with raw, unprocessed data. Integrating alternative data sources, such as satellite-derived measurements or high-resolution reanalysis products, might complement the ECCC data. Furthermore, temporal limitations of the dataset, such as monthly aggregation, restrict the analysis of short-term weather events. Employing higher temporal resolution data, such as hourly or daily measurements, would allow for a detailed examination of precipitation and temperature interactions over shorter time scales.
 
+### Using the Model to Predict Temperature Effects on Airport Operations
+
+The relationship between mean temperature and airport operations, particularly aircraft takeoff performance shows the importance of predictive modeling in adapting to the impacts of climate change. Rising temperatures affect air density, reducing lift and necessitating longer runways or weight restrictions for safe takeoff [@coffel_climate_2015]. These changes not only compromise operational efficiency but also increase costs for airports and airlines. As climate change accelerates, mean temperature fluctuations will likely become more frequent and extreme, posing greater challenges for airport operations. 
+
+One key application of the model lies in runway management and expansion. Airports facing persistent increases in mean temperature can use predictions from the model to assess the need for longer runways. These expansions would accommodate higher takeoff speeds required under low air density conditions. Similarly, the model's outputs can inform flight scheduling and weight management strategies by identifying periods of elevated temperatures when weight restrictions may be necessary. This allows airports to prioritize lighter-loaded flights, optimize cargo and passenger distribution, and adjust scheduling to minimize disruptions.
+
+The model also supports integration into broader climate resilience strategies. Airports can combine temperature predictions with long-term climate adaptation plans, enabling investments in infrastructure and technology suited for a warming climate. Moreover, by embedding the model into real-time decision support systems, airports can dynamically adjust operations based on updated atmospheric data. 
+
 ### Potential Directions for Expanded Analysis
+
 Expanding this research to include airports in different regions around the world would provide a broader understanding of how variables influence airport safety. Airports operate in different climatic and geographic conditions such as coastal locations and high-altitude terrains, have unique challenges influenced by local weather patterns. Investigating these variations could show patterns and trends that are not observable when focusing on Vancouver's airport.
 
 For instance, airports in tropical regions might experience high wind speeds and pressure fluctuations due to frequent storms, whereas those in colder regions are more likely to face challenges related to low temperatures and ice. Conducting similar analyses at airports in different environments could show how predictors like wind speed, sea level pressure, and temperature interact under different climatic regimes.
