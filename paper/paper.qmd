@@ -55,7 +55,7 @@ The estimand in this study is the effect of atmospheric variables, such as wind 
 
 The results indicate that total precipitation is the most influential predictor, showing a strong inverse relationship with mean temperature. Wind speed and gust speed demonstrate non-linear effects, with moderate increases associated with temperature rises and higher values contributing to cooling. Pressure consistently exhibits a negative association with temperature, with amplified effects at extreme levels. The model explains 61% of the variance in mean temperature and performs well in validation, showing minimal overfitting and low prediction error. 
 
-These results highlight the role of atmospheric variables in regional temperature changes and the effectiveness of the polynomial regression approach in capturing complex relationships. Our findings contribute to a deeper understanding of regional climate changes, which is important for decision-making and resilience planning in an important nodes in global transportation and logistics, where temperature fluctuations directly influence operational efficiency, safety, and infrastructure planning.
+These results highlight the role of atmospheric variables in regional temperature changes and the effectiveness of the polynomial regression approach in capturing complex relationships. Our findings contribute to a deeper understanding of regional climate changes, which is important for decision-making and resilience planning in an important node in global transportation and logistics, where temperature fluctuations directly influence operational efficiency, safety, and infrastructure planning. 
 
 The remainder of this paper is structured as follows: @sec-data provides an overview of the data. @sec-model provides the modeling approach of multiple linear regression with polynomial transformation. We then present our results in @sec-result and discuss the implications, limitations, and future research directions in @sec-discussion.  
 
@@ -76,7 +76,7 @@ The dataset used in this study, derived from Environment and Climate Change Cana
 
 ## Raw Data 
 
-In this project, we focus on weather data from YVR Airport, extracting only the datasets containing measurements taken at this specific location from the database obtained from @canadian_centre_for_climate_services_adjusted_2022 and @meteorological_service_of_canada_past_2023. In both datasets, each row corresponds to a single averaged observation for a specific month and year. Each entry includes climate information such as temperature and wind speed, with their respective units recorded alongside the values. Additionally, a unique station ID and geographic coordinates (x, y) are included at the beginning of each entry for reference. The column headers of the raw historical weather dataset is displayed in @tbl-raw-climate. The column headers of the AHCCD dataset is displayed in @tbl-raw-ahccd. 
+In this project, we focus on weather data from YVR Airport, extracting only the datasets containing measurements taken at this specific location from the database obtained from @canadian_centre_for_climate_services_adjusted_2022 and @meteorological_service_of_canada_past_2023. In both datasets, each row corresponds to a single averaged observation for a specific month and year. Each entry includes climate information such as temperature and wind speed, with their respective units recorded alongside the values. Additionally, a unique station ID and geographic coordinates (x, y) are included at the beginning of each entry for reference. The column headers of the raw historical weather dataset are displayed in @tbl-raw-climate. The column headers of the AHCCD dataset are displayed in @tbl-raw-ahccd. 
 
 ```{r}
 #| label: tbl-raw-climate
@@ -194,7 +194,7 @@ analysis_data |>
 
 The summary statistics of the combined dataset are displayed in @tbl-summary.
 
-The cleaned and combined dataset is split into a training group and a testing group randomly. The training dataset contains 70% of the cleaned dataset and the testing dataset contains 30% of the cleaned dataset. The training dataset is used to fit the model. The test dataset is used to evaluate the model's performance on unseen data. 
+The cleaned and combined dataset is split into a training group and a testing group randomly. The training dataset has 70% of the cleaned dataset and the testing dataset has 30% of the cleaned dataset. The training dataset is used to fit the model. The test dataset is used to evaluate the model's performance on unseen data.  
 
 ## Characteristics of Cleaned Data
 
@@ -330,7 +330,7 @@ ggplot(analysis_data, aes(x = `total_precipitation`, y = `total_rain`)) +
 
 The goal of our modelling strategy is to find a model that can predict temperature changes with other weather data as predictors such as wind speed, pressure, precipitation, and gust speed. 
 
-We build a linear model, a Bayesian model, and a linear model with 2 degrees of polynomial transformation. We determine the best model is the linear model with polynomial transformation. The detailed steps are recorded in @sec-model-detail. We choose linear regression instead of the general model because all the variables are numeric. According to @kumar_glm_2023, linear regression is applicable when the response is continuous and normally distributed, which is more applicable to our dataset. 
+We build a linear model, a Bayesian model, and a linear model with 2 degrees of polynomial transformation. We decide the best model is the linear model with polynomial transformation. The detailed steps are recorded in @sec-model-detail. We choose linear regression instead of the general model because all the variables are numeric. According to @kumar_glm_2023, linear regression is applicable when the response is continuous and normally distributed, which is more applicable to our dataset.  
 
 ## Model Set-up
 
@@ -428,9 +428,9 @@ kable(vif_values)
 
 ### Validation on Test Data
 
-We validate our Model LP with test data to evaluate the model's generalizability and performance on unseen data The result is shown in @tbl-test-validate. 
+We validate our Model LP with test data to evaluate the model's generalizability and performance on unseen data. The result is shown in @tbl-test-validate.  
 
-The R2 value calculated on the test data ($R^2 = 0.59$) is very close to the R2 value of the model on the training data ($R^2 = 0.61$), as discussed in @sec-result-r2. This similarity indicates that the model generalizes well to unseen data, as its performance on the test set is consistent with its performance during training. The training MSE of 0.0137 and test MSE of 0.0158 indicate the model performs well on both datasets with minimal overfitting. The small difference between the two R2 values and the small difference between the errors suggests good generalization to unseen data.
+The R2 value calculated on the test data ($R^2 = 0.59$) is close to the R2 value of the model on the training data ($R^2 = 0.61$), as discussed in @sec-result-r2. This similarity indicates that the model generalizes well to unseen data, as its performance on the test set is consistent with its performance during training. The training MSE of 0.0137 and test MSE of 0.0158 indicate the model performs well on both datasets with minimal overfitting. The small difference between the two R2 values and the small difference between the errors suggests good generalization to unseen data. 
 
 ```{r}
 #| label: tbl-test-validate
@@ -578,7 +578,7 @@ ggplot(test_data, aes(x = log_mean_temp, y = predicted)) +
   theme_minimal()
 ```
 
-As displayed in @fig-predictedvsfit, the predicted vs. actual plots for both the training and test datasets demonstrate a strong alignment along the diagonal. In @fig-predictedvsfit-1, The points closely align along the red diagonal line, indicating that the model predictions are highly accurate for the training dataset. In @fig-predictedvsfit-2, the test dataset shows a comparable trend, with predictions aligning well with actual values, suggesting the model generalizes effectively to unseen data. These results confirm that the model provides a good fit for the response variable in both datasets.
+As displayed in @fig-predictedvsfit, the predicted vs. actual plots for both the training and test datasets demonstrate a strong alignment along the diagonal. In @fig-predictedvsfit-1, The points closely align along the red diagonal line, showing that the model predictions are highly accurate for the training dataset. In @fig-predictedvsfit-2, the test dataset shows a comparable trend, with predictions aligning well with actual values, suggesting the model generalizes effectively to unseen data. These results confirm that the model provides a good fit for the response variable in both datasets. 
 
 ## P-value
 
@@ -607,10 +607,10 @@ The study highlights a non-linear relationship between predictors, such as wind 
 The analysis identifies precipitation as the most influential factor in predicting temperature changes, with a strong inverse relationship observed. This result is consistent with the idea that precipitation events often coincide with increased cloud cover, which limits solar radiation and leads to cooler surface temperatures. Additionally, evaporative cooling during and after precipitation events may further contribute to this effect. The quadratic nature of the precipitation term suggests diminishing effects at extreme levels, which could reflect saturation in cooling mechanisms or localized anomalies in precipitation patterns. These findings emphasize the role of hydrological processes in modulating regional climate and provide a basis for refining climate prediction models to incorporate precipitation variability more effectively.
 
 ## Comparing with Previous Studies
-### Our finding does not aligh with Visser
-The findings diverge from the work of @visser_eliminating_2021, who identified a positive association between precipitation intensity and temperature in Australia. This contrast highlights the importance of regional climatic differences and suggests that factors such as geographic features, prevailing weather patterns, and local topography may alter these relationships. For example, Vancouver's coastal climate likely moderates precipitation's impact on temperature compared to Australia's arid and semi-arid conditions.
+### Our finding does not align with Visser
+The findings diverge from the work of @visser_eliminating_2021, who identified a positive association between precipitation intensity and temperature in Australia. This contrast highlights the importance of regional climatic differences and suggests that factors such as geographic features, prevailing weather patterns, and local topography may alter these relationships. For example, Vancouver's coastal climate may affect precipitation's impact on temperature compared to Australia's arid and semi-arid conditions. 
 
-### Our finding align with Wills
+### Our finding aligns with Wills
 Our results align with @wills_systematic_2022, who identified atmospheric pressure as a cooling factor in equatorial Pacific regions. This consistency reinforces the broader applicability of pressure-temperature relationships in diverse climatic contexts. The agreement with Wills suggests that pressure effects may operate at larger spatial scales, transcending localized conditions.
 
 ## Weaknesses and Future Directions
@@ -642,7 +642,7 @@ To address these concerns, future research could compare adjusted datasets with 
 
 ### Using the Model to Predict Temperature Effects on Airport Operations
 
-The relationship between mean temperature and airport operations, particularly aircraft takeoff performance shows the importance of predictive modeling in adapting to the impacts of climate change. Rising temperatures affect air density, reducing lift and necessitating longer runways or weight restrictions for safe takeoff [@coffel_climate_2015]. These changes not only compromise operational efficiency but also increase costs for airports and airlines. As climate change accelerates, mean temperature fluctuations will likely become more frequent and extreme, posing greater challenges for airport operations. 
+The relationship between mean temperature and airport operations, particularly aircraft takeoff performance shows the importance of predictive modeling in adapting to the impacts of climate change. Rising temperatures affect air density, reducing lift and necessitating longer runways or weight restrictions for safe takeoff [@coffel_climate_2015]. These changes not only compromise operational efficiency but also increase costs for airports and airlines. As climate change accelerates, mean temperature fluctuations will become more frequent and extreme, posing greater challenges for airport operations.  
 
 One key application of the model lies in runway management and expansion. Airports facing persistent increases in mean temperature can use predictions from the model to assess the need for longer runways. These expansions would accommodate higher takeoff speeds required under low air density conditions. Similarly, the model's outputs can inform flight scheduling and weight management strategies by identifying periods of elevated temperatures when weight restrictions may be necessary. This allows airports to prioritize lighter-loaded flights, optimize cargo and passenger distribution, and adjust scheduling to minimize disruptions.
 
@@ -650,7 +650,7 @@ The model also supports integration into broader climate resilience strategies. 
 
 ### Potential Directions for Expanded Analysis
 
-Expanding this research to include airports in different regions around the world would provide a broader understanding of how variables influence airport safety. Airports operate in different climatic and geographic conditions such as coastal locations and high-altitude terrains, have unique challenges influenced by local weather patterns. Investigating these variations could show patterns and trends that are not observable when focusing on Vancouver's airport.
+Expanding this research to include airports in different regions around the world would provide a broader understanding of how variables influence airport safety. Airports operate in different climatic and geographic conditions such as coastal locations and high-altitude terrains, and have unique challenges influenced by local weather patterns. Investigating these variations could show patterns and trends that are not observable when focusing on Vancouver's airport. 
 
 For instance, airports in tropical regions might experience high wind speeds and pressure fluctuations due to frequent storms, whereas those in colder regions are more likely to face challenges related to low temperatures and ice. Conducting similar analyses at airports in different environments could show how predictors like wind speed, sea level pressure, and temperature interact under different climatic regimes.
 
@@ -694,7 +694,7 @@ modelsummary(
 )
 ```
 
-The model's coefficients suggest an issue of multicollinearity, particularly due to the inclusion of highly correlated predictors such as maximum temperature, minimum temperature, and mean temperature, as discussed in @sec-multic-temp. Multicollinearity inflates the standard errors of the coefficients, making it difficult to determine the individual contribution of these variables to the response variable. Despite the model showing a perfect R2 and adjusted R2, these metrics are misleading because the presence of highly correlated predictors often leads to overfitting. This is evident from the small coefficient magnitudes and nearly zero p-values, which do not reflect the true independent influence of the predictors. Such multicollinearity can undermine the model's interpretability and generalizability to new data.
+The model's coefficients suggest an issue of multicollinearity, particularly due to the inclusion of highly correlated predictors such as maximum temperature, minimum temperature, and mean temperature, as discussed in @sec-multic-temp. Multicollinearity inflates the standard errors of the coefficients, making it difficult to find the individual contribution of these variables to the response variable. Despite the model showing a perfect R2 and adjusted R2, these metrics are misleading because the presence of highly correlated predictors often leads to overfitting. This is clear from the small coefficient magnitudes and nearly zero p-values, which do not reflect the true independent influence of the predictors. Such multicollinearity can undermine the model's interpretability and generalizability to new data. 
 
 
 ## MLR Model Without Multicollinearity Variables
