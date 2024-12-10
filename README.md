@@ -1,4 +1,4 @@
-# Non-Linear Effects of Pressure, Precipitation, Wind, and Gust Speed on Temperature at Vancouver International Airport
+# Exploring Nonlinear Atmospheric Influences on Temperature Using Polynomial Regression at Vancouver International Airport
 
 ## Overview
 This study investigates how atmospheric factors influence temperature at Vancouver International Airport using a polynomial regression model.
